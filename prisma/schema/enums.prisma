@@ -17,3 +17,10 @@ enum Difficulty {
   MEDIUM
   HARD
 }
+
+enum AssessmentStatus {
+  DRAFT
+  PUBLISHED
+  ACTIVE
+  CLOSED
+}

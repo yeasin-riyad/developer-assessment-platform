@@ -1,0 +1,41 @@
+model Assessment {
+    id          String  @id @default(uuid())
+    title       String
+    description String?
+
+    duration   Int
+    totalMarks Int @default(0)
+
+    status AssessmentStatus @default(DRAFT)
+
+    recruiterId String
+    recruiter User @relation(fields: [recruiterId], references: [id])
+
+    problems AssessmentProblem[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([recruiterId])
+    @@index([status])
+}
+
+model AssessmentProblem {
+    id String @id @default(uuid())
+
+    assessmentId String
+    problemId    String
+
+    order  Int
+    points Int
+
+    assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+    problem Problem @relation(fields: [problemId], references: [id])
+
+    createdAt DateTime @default(now())
+
+    @@unique([assessmentId, problemId])
+    @@index([assessmentId])
+    @@index([problemId])
+}
