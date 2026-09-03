@@ -9,6 +9,7 @@ model User {
   problems  Problem[]
   assessments Assessment[]
   invitations Invitation[]
+  attempts Attempt[]
 
 
   createdAt DateTime @default(now())

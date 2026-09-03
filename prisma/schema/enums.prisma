@@ -31,3 +31,10 @@ enum InvitationStatus {
   DECLINED
   EXPIRED
 }
+
+enum AttemptStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  EXPIRED
+}
