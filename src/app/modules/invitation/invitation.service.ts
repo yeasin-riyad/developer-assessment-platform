@@ -167,3 +167,136 @@ const getMyCandidateInvitations = async (
     },
   });
 };
+
+
+const acceptInvitation = async (
+  candidateId: string,
+  invitationId: string,
+) => {
+  const invitation = await prisma.invitation.findFirst({
+    where: {
+      id: invitationId,
+      candidateId,
+    },
+
+    include: {
+      assessment: true,
+    },
+  });
+
+  if (!invitation) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      "Invitation not found",
+    );
+  }
+
+  if (invitation.status !== "INVITED") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Invitation is already ${invitation.status.toLowerCase()}`,
+    );
+  }
+
+  // Check expiration
+  if (
+    invitation.expiresAt &&
+    invitation.expiresAt < new Date()
+  ) {
+    await prisma.invitation.update({
+      where: {
+        id: invitation.id,
+      },
+      data: {
+        status: "EXPIRED",
+      },
+    });
+
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invitation has expired",
+    );
+  }
+
+  // Assessment must still be published
+  if (invitation.assessment.status !== "PUBLISHED") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "This assessment is not currently available",
+    );
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const updatedInvitation =
+      await tx.invitation.update({
+        where: {
+          id: invitation.id,
+        },
+
+        data: {
+          status: "ACCEPTED",
+        },
+      });
+
+    const attempt = await tx.attempt.create({
+      data: {
+        assessmentId: invitation.assessmentId,
+        candidateId,
+        status: "NOT_STARTED",
+      },
+    });
+
+    return {
+      invitation: updatedInvitation,
+      attempt,
+    };
+  });
+
+  return result;
+};
+
+
+const declineInvitation = async (
+  candidateId: string,
+  invitationId: string,
+) => {
+  const invitation = await prisma.invitation.findFirst({
+    where: {
+      id: invitationId,
+      candidateId,
+    },
+  });
+
+  if (!invitation) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      "Invitation not found",
+    );
+  }
+
+  if (invitation.status !== "INVITED") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Only pending invitations can be declined",
+    );
+  }
+
+  return prisma.invitation.update({
+    where: {
+      id: invitationId,
+    },
+
+    data: {
+      status: "DECLINED",
+    },
+  });
+};
+
+
+export const invitationService = {
+  createInvitation,
+  getMyInvitations,
+  getMyCandidateInvitations,
+  acceptInvitation,
+  declineInvitation,
+};
