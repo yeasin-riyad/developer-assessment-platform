@@ -1,0 +1,7 @@
+enum UserRole {
+  CANDIDATE
+  RECRUITER
+  CREATOR
+  EVALUATOR
+  ADMIN
+}
