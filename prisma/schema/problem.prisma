@@ -1,0 +1,46 @@
+model Problem {
+  id          String     @id @default(uuid())
+  title       String
+  description String
+  type        ProblemType
+  difficulty  Difficulty @default(MEDIUM)
+
+  points      Int        @default(10)
+
+  createdById String
+  createdBy   User       @relation(fields: [createdById], references: [id])
+
+  options     ProblemOption[]
+  testCases   TestCase[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([type])
+  @@index([difficulty])
+  @@index([createdById])
+}
+
+
+model ProblemOption {
+  id        String  @id @default(uuid())
+  text      String
+  isCorrect Boolean @default(false)
+
+  problemId String
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model TestCase {
+  id         String  @id @default(uuid())
+  input      String
+  expectedOutput String
+  isHidden   Boolean @default(true)
+
+  problemId  String
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+}

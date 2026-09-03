@@ -5,3 +5,15 @@ enum UserRole {
   EVALUATOR
   ADMIN
 }
+
+enum ProblemType {
+  CODING
+  MCQ
+  WRITTEN
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
