@@ -7,9 +7,7 @@ import { globalErrorHandler } from "./app/middleware/globalErrorHandler.js";
 import { userRoutes } from "./app/modules/user/user.route.js";
 import { companyRoutes } from "./app/modules/company/company.route.js";
 import { problemRoutes } from "./app/modules/problem/problem.route.js";
-
-
-
+import { assessmentRoutes } from "./app/modules/assessment/assessment.route.js";
 
 const app = express();
 
@@ -38,6 +36,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/companies", companyRoutes);
 app.use("/api/v1/problems", problemRoutes);
+app.use("/api/v1/assessments", assessmentRoutes);
 
 app.use(notFound);
 app.use(globalErrorHandler);
