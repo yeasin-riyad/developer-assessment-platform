@@ -24,3 +24,10 @@ enum AssessmentStatus {
   ACTIVE
   CLOSED
 }
+
+enum InvitationStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}

@@ -12,6 +12,7 @@ model Assessment {
     recruiter User @relation(fields: [recruiterId], references: [id])
 
     problems AssessmentProblem[]
+    invitations Invitation[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

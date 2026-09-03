@@ -8,6 +8,7 @@ model User {
 
   problems  Problem[]
   assessments Assessment[]
+  invitations Invitation[]
 
 
   createdAt DateTime @default(now())
