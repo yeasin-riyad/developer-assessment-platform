@@ -9,6 +9,7 @@ import { companyRoutes } from "./app/modules/company/company.route.js";
 import { problemRoutes } from "./app/modules/problem/problem.route.js";
 import { assessmentRoutes } from "./app/modules/assessment/assessment.route.js";
 import { invitationRoutes } from "./app/modules/invitation/invitation.route.js";
+import { attemptRoutes } from "./app/modules/attempt/attempt.route.js";
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use("/api/v1/companies", companyRoutes);
 app.use("/api/v1/problems", problemRoutes);
 app.use("/api/v1/assessments", assessmentRoutes);
 app.use("/api/v1/invitations", invitationRoutes);
+app.use("/api/v1/attempts", attemptRoutes);
 
 app.use(notFound);
 app.use(globalErrorHandler);
