@@ -38,3 +38,20 @@ enum AttemptStatus {
   SUBMITTED
   EXPIRED
 }
+
+enum SubmissionStatus {
+  PENDING
+  RUNNING
+  ACCEPTED
+  WRONG_ANSWER
+  RUNTIME_ERROR
+  TIME_LIMIT_EXCEEDED
+  COMPILATION_ERROR
+  EVALUATED
+  REJECTED
+}
+
+enum EvaluationType {
+  AUTOMATIC
+  MANUAL
+}

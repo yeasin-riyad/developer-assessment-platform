@@ -17,6 +17,7 @@ model Attempt {
 
   candidate User @relation(fields: [candidateId], references: [id] )
   answers AttemptAnswer[]
+  submissions Submission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

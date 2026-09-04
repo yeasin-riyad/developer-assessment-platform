@@ -10,7 +10,7 @@ model User {
   assessments Assessment[]
   invitations Invitation[]
   attempts Attempt[]
-
+  evaluations Evaluation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

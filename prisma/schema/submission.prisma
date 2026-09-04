@@ -1,0 +1,54 @@
+model Submission {
+  id String @id @default(uuid())
+
+  attemptId String
+  problemId String
+
+  answer String
+
+  language String?
+
+  status SubmissionStatus @default(PENDING)
+
+  score Int @default(0)
+
+  submittedAt DateTime @default(now())
+
+  attempt Attempt @relation(fields: [attemptId],references: [id],onDelete: Cascade)
+
+  problem Problem @relation(fields: [problemId],references: [id])
+
+  evaluation Evaluation?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([attemptId])
+  @@index([problemId])
+  @@index([status])
+
+  @@unique([attemptId, problemId])
+}
+
+model Evaluation {
+  id String @id @default(uuid())
+
+  submissionId String @unique
+
+  type EvaluationType
+
+  score Int @default(0)
+
+  feedback String?
+
+  evaluatorId String?
+
+  submission Submission @relation(fields: [submissionId],references: [id],onDelete: Cascade)
+
+  evaluator User? @relation(fields: [evaluatorId],references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([evaluatorId])
+}
