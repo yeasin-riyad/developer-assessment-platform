@@ -2,6 +2,8 @@ import httpStatus from "http-status";
 
 import { AppError } from "../../utils/AppError.js";
 import { prisma } from "../../lib/prisma.js";
+import { sendEmail } from "../../utils/sendEmail.js";
+import { invitationEmailTemplate } from "../../templates/invitationEmail.js";
 
 const createInvitation = async (
   recruiterId: string,
@@ -20,10 +22,7 @@ const createInvitation = async (
   });
 
   if (!assessment) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "Assessment not found",
-    );
+    throw new AppError(httpStatus.NOT_FOUND, "Assessment not found");
   }
 
   // 2. Assessment must be published
@@ -42,10 +41,7 @@ const createInvitation = async (
   });
 
   if (!candidate) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "Candidate not found",
-    );
+    throw new AppError(httpStatus.NOT_FOUND, "Candidate not found");
   }
 
   // 4. Candidate must have CANDIDATE role
@@ -57,15 +53,14 @@ const createInvitation = async (
   }
 
   // 5. Prevent duplicate invitation
-  const existingInvitation =
-    await prisma.invitation.findUnique({
-      where: {
-        assessmentId_candidateId: {
-          assessmentId: payload.assessmentId,
-          candidateId: payload.candidateId,
-        },
+  const existingInvitation = await prisma.invitation.findUnique({
+    where: {
+      assessmentId_candidateId: {
+        assessmentId: payload.assessmentId,
+        candidateId: payload.candidateId,
       },
-    });
+    },
+  });
 
   if (existingInvitation) {
     throw new AppError(
@@ -75,7 +70,7 @@ const createInvitation = async (
   }
 
   // 6. Create invitation
-  return prisma.invitation.create({
+  const invitation = await prisma.invitation.create({
     data: {
       assessmentId: payload.assessmentId,
       candidateId: payload.candidateId,
@@ -102,11 +97,31 @@ const createInvitation = async (
       },
     },
   });
+
+
+  //send Elmail
+  await sendEmail({
+    to: invitation.candidate.email,
+
+    subject: `Invitation: ${invitation.assessment.title}`,
+
+    html: invitationEmailTemplate({
+      candidateName: invitation.candidate.name,
+
+      assessmentTitle: invitation.assessment.title,
+
+      duration: invitation.assessment.duration,
+
+      totalMarks: invitation.assessment.totalMarks,
+
+      expiresAt: payload.expiresAt,
+    }),
+  });
+
+  return invitation;
 };
 
-const getMyInvitations = async (
-  recruiterId: string,
-) => {
+const getMyInvitations = async (recruiterId: string) => {
   return prisma.invitation.findMany({
     where: {
       assessment: {
@@ -140,10 +155,7 @@ const getMyInvitations = async (
   });
 };
 
-
-const getMyCandidateInvitations = async (
-  candidateId: string,
-) => {
+const getMyCandidateInvitations = async (candidateId: string) => {
   return prisma.invitation.findMany({
     where: {
       candidateId,
@@ -168,11 +180,7 @@ const getMyCandidateInvitations = async (
   });
 };
 
-
-const acceptInvitation = async (
-  candidateId: string,
-  invitationId: string,
-) => {
+const acceptInvitation = async (candidateId: string, invitationId: string) => {
   const invitation = await prisma.invitation.findFirst({
     where: {
       id: invitationId,
@@ -185,10 +193,7 @@ const acceptInvitation = async (
   });
 
   if (!invitation) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "Invitation not found",
-    );
+    throw new AppError(httpStatus.NOT_FOUND, "Invitation not found");
   }
 
   if (invitation.status !== "INVITED") {
@@ -199,10 +204,7 @@ const acceptInvitation = async (
   }
 
   // Check expiration
-  if (
-    invitation.expiresAt &&
-    invitation.expiresAt < new Date()
-  ) {
+  if (invitation.expiresAt && invitation.expiresAt < new Date()) {
     await prisma.invitation.update({
       where: {
         id: invitation.id,
@@ -212,10 +214,7 @@ const acceptInvitation = async (
       },
     });
 
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Invitation has expired",
-    );
+    throw new AppError(httpStatus.BAD_REQUEST, "Invitation has expired");
   }
 
   // Assessment must still be published
@@ -227,16 +226,15 @@ const acceptInvitation = async (
   }
 
   const result = await prisma.$transaction(async (tx) => {
-    const updatedInvitation =
-      await tx.invitation.update({
-        where: {
-          id: invitation.id,
-        },
+    const updatedInvitation = await tx.invitation.update({
+      where: {
+        id: invitation.id,
+      },
 
-        data: {
-          status: "ACCEPTED",
-        },
-      });
+      data: {
+        status: "ACCEPTED",
+      },
+    });
 
     const attempt = await tx.attempt.create({
       data: {
@@ -255,11 +253,7 @@ const acceptInvitation = async (
   return result;
 };
 
-
-const declineInvitation = async (
-  candidateId: string,
-  invitationId: string,
-) => {
+const declineInvitation = async (candidateId: string, invitationId: string) => {
   const invitation = await prisma.invitation.findFirst({
     where: {
       id: invitationId,
@@ -268,10 +262,7 @@ const declineInvitation = async (
   });
 
   if (!invitation) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "Invitation not found",
-    );
+    throw new AppError(httpStatus.NOT_FOUND, "Invitation not found");
   }
 
   if (invitation.status !== "INVITED") {
@@ -291,7 +282,6 @@ const declineInvitation = async (
     },
   });
 };
-
 
 export const invitationService = {
   createInvitation,
