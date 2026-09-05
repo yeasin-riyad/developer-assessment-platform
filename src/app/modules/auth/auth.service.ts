@@ -6,6 +6,7 @@ import { AppError } from "../../utils/AppError.js";
 import { jwtUtils } from "../../utils/jwt.js";
 import config from "../../config/index.js";
 import { prisma } from "../../lib/prisma.js";
+import { UserRole } from "../../../generated/prisma/enums.js";
 
 const loginUser = async (payload: {
   email: string;
@@ -73,7 +74,17 @@ const registerUser = async (payload: {
   name: string;
   email: string;
   password: string;
+  role?:UserRole
+
 }) => {
+  if(payload.role && payload.role!="CREATOR"){
+    throw new AppError(
+      httpStatus.CONFLICT,
+      "Only Candidate or Creator Can Manually register",
+    );
+
+
+  }
   const existingUser = await prisma.user.findUnique({
     where: {
       email: payload.email,
@@ -97,6 +108,8 @@ const registerUser = async (payload: {
       name: payload.name,
       email: payload.email,
       password: hashedPassword,
+      role: payload.role || "CANDIDATE"
+  
     },
     select: {
       id: true,

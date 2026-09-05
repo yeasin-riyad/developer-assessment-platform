@@ -6,8 +6,6 @@ model Submission {
 
   answer String
 
-  language String?
-
   status SubmissionStatus @default(PENDING)
 
   score Int @default(0)
@@ -26,8 +24,6 @@ model Submission {
   @@index([attemptId])
   @@index([problemId])
   @@index([status])
-
-  @@unique([attemptId, problemId])
 }
 
 model Evaluation {
