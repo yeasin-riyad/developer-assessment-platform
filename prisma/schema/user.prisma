@@ -5,6 +5,7 @@ model User {
   password  String
   role      UserRole @default(CANDIDATE)
   company   Company?
+  isActive  Boolean  @default(true)
 
   problems  Problem[]
   assessments Assessment[]
