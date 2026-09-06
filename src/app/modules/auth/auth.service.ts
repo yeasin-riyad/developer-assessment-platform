@@ -8,10 +8,7 @@ import config from "../../config/index.js";
 import { prisma } from "../../lib/prisma.js";
 import { UserRole } from "../../../generated/prisma/enums.js";
 
-const loginUser = async (payload: {
-  email: string;
-  password: string;
-}) => {
+const loginUser = async (payload: { email: string; password: string }) => {
   const user = await prisma.user.findUnique({
     where: {
       email: payload.email,
@@ -19,9 +16,13 @@ const loginUser = async (payload: {
   });
 
   if (!user) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid email or password");
+  }
+
+  if (!user.isActive) {
     throw new AppError(
-      httpStatus.UNAUTHORIZED,
-      "Invalid email or password",
+      httpStatus.FORBIDDEN,
+      "Your account has been deactivated",
     );
   }
 
@@ -31,10 +32,7 @@ const loginUser = async (payload: {
   );
 
   if (!isPasswordMatched) {
-    throw new AppError(
-      httpStatus.UNAUTHORIZED,
-      "Invalid email or password",
-    );
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid email or password");
   }
 
   const jwtPayload = {
@@ -67,23 +65,17 @@ const loginUser = async (payload: {
   };
 };
 
-
-
-
 const registerUser = async (payload: {
   name: string;
   email: string;
   password: string;
-  role?:UserRole
-
+  role?: UserRole;
 }) => {
-  if(payload.role && payload.role!="CREATOR"){
+  if (payload.role && payload.role != "CREATOR") {
     throw new AppError(
       httpStatus.CONFLICT,
       "Only Candidate or Creator Can Manually register",
     );
-
-
   }
   const existingUser = await prisma.user.findUnique({
     where: {
@@ -98,18 +90,14 @@ const registerUser = async (payload: {
     );
   }
 
-  const hashedPassword = await bcrypt.hash(
-    payload.password,
-    12,
-  );
+  const hashedPassword = await bcrypt.hash(payload.password, 12);
 
   const user = await prisma.user.create({
     data: {
       name: payload.name,
       email: payload.email,
       password: hashedPassword,
-      role: payload.role || "CANDIDATE"
-  
+      role: payload.role || "CANDIDATE",
     },
     select: {
       id: true,
@@ -123,13 +111,8 @@ const registerUser = async (payload: {
   return user;
 };
 
-
-
 const refreshAccessToken = async (refreshToken: string) => {
-  const result = jwtUtils.verifyToken(
-    refreshToken,
-    config.jwt_refresh_secret,
-  );
+  const result = jwtUtils.verifyToken(refreshToken, config.jwt_refresh_secret);
 
   if (!result.success) {
     throw new AppError(
@@ -151,9 +134,13 @@ const refreshAccessToken = async (refreshToken: string) => {
   });
 
   if (!user) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "User no longer exists");
+  }
+
+  if (!user.isActive) {
     throw new AppError(
-      httpStatus.UNAUTHORIZED,
-      "User no longer exists",
+      httpStatus.FORBIDDEN,
+      "Your account has been deactivated",
     );
   }
 
