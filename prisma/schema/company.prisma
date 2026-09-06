@@ -4,6 +4,7 @@ model Company {
   description String?
   website     String?
   logo        String?
+  status      CompanyStatus @default(ACTIVE)
 
   recruiterId String   @unique
   recruiter   User     @relation(fields: [recruiterId], references: [id])

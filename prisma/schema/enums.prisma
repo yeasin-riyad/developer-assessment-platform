@@ -56,3 +56,8 @@ enum ResultStatus {
   PASS
   FAIL
 }
+
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+}
