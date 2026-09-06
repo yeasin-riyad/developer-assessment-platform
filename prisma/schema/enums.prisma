@@ -50,3 +50,9 @@ enum EvaluationType {
   AUTOMATIC
   MANUAL
 }
+
+
+enum ResultStatus {
+  PASS
+  FAIL
+}

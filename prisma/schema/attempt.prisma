@@ -5,6 +5,7 @@ model Attempt {
   candidateId  String
 
   status AttemptStatus @default(NOT_STARTED)
+  result Result?
 
   startedAt  DateTime?
   submittedAt DateTime?

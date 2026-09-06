@@ -1,0 +1,40 @@
+model Result {
+  id String @id @default(uuid())
+
+  attemptId String @unique
+
+  totalMarks Int
+  obtainedMarks Int
+  percentage Float
+
+  status ResultStatus
+
+  attempt Attempt @relation(fields: [attemptId],references: [id],onDelete: Cascade)
+
+  items ResultItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+
+model ResultItem {
+  id String @id @default(uuid())
+
+  resultId String
+  problemId String
+
+  maximumMarks Int
+  obtainedMarks Int
+
+  result Result @relation(fields: [resultId],references: [id],onDelete: Cascade)
+
+  problem Problem @relation(fields: [problemId],references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([resultId, problemId])
+  @@index([problemId])
+}

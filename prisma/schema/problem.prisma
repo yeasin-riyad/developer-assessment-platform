@@ -15,6 +15,7 @@ model Problem {
   assessmentProblems AssessmentProblem[]
   attemptAnswers AttemptAnswer[]
   submissions Submission[]
+  resultItems ResultItem[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
