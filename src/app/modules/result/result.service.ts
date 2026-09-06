@@ -9,47 +9,41 @@ const generateResult = async (
   candidateId: string,
   attemptId: string,
 ) => {
-  const attempt =
-    await prisma.attempt.findUnique({
-      where: {
-        id: attemptId,
-      },
-
-      include: {
-        candidate: true,
-
-        assessment: {
-          include: {
-            problems: {
-              include: {
-                problem: true,
-              },
-
-              orderBy: {
-                order: "asc",
-              },
+  // 1. Find attempt
+  const attempt = await prisma.attempt.findUnique({
+    where: {
+      id: attemptId,
+    },
+    include: {
+      assessment: {
+        include: {
+          problems: {
+            orderBy: {
+              order: "asc",
             },
           },
         },
+      },
 
-        submissions: {
-          include: {
-            evaluation: true,
-          },
-
-          orderBy: {
+      submissions: {
+        orderBy: [
+          {
             createdAt: "desc",
           },
-        },
-
-        result: {
-          include: {
-            items: true,
+          {
+            id: "desc",
           },
+        ],
+        include: {
+          evaluation: true,
         },
       },
-    });
 
+      result: true,
+    },
+  });
+
+  // 2. Attempt exists?
   if (!attempt) {
     throw new AppError(
       httpStatus.NOT_FOUND,
@@ -57,176 +51,31 @@ const generateResult = async (
     );
   }
 
-  const pendingSubmission =
-  attempt.submissions.find(
-    (submission) =>
-      !submission.evaluation,
-  );
-
-if (pendingSubmission) {
-  throw new AppError(
-    httpStatus.BAD_REQUEST,
-    "All submissions must be evaluated before generating the final result",
-  );
-}
-
-  if (
-    attempt.candidateId !== candidateId
-  ) {
+  // 3. Check candidate ownership
+  if (attempt.candidateId !== candidateId) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "You are not allowed to access this attempt",
+      "You are not allowed to generate result for this attempt",
     );
   }
 
-  /**
-   * Result can only be generated
-   * after candidate submits attempt.
-   */
+  // 4. Prevent result generation before submission
   if (
     attempt.status !== "SUBMITTED" &&
     attempt.status !== "EXPIRED"
   ) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Attempt has not been submitted yet",
+      "Result can only be generated after the attempt is submitted or expired",
     );
   }
 
-  /**
-   * If result already exists,
-   * return existing result.
-   */
+  // 5. If result already exists, return it
   if (attempt.result) {
-    return attempt.result;
-  }
-
-  /**
-   * We need the latest submission
-   * for every problem.
-   */
-  const latestSubmissions =
-    new Map<string, typeof attempt.submissions[number]>();
-
-  for (const submission of attempt.submissions) {
-    if (
-      !latestSubmissions.has(
-        submission.problemId,
-      )
-    ) {
-      latestSubmissions.set(
-        submission.problemId,
-        submission,
-      );
-    }
-  }
-
-  let totalMarks = 0;
-  let obtainedMarks = 0;
-
-  const resultItems =
-  attempt.assessment.problems.map(
-    (assessmentProblem) => {
-      const maximumMarks =
-        assessmentProblem.points;
-
-      totalMarks += maximumMarks;
-
-      const submission =
-        latestSubmissions.get(
-          assessmentProblem.problemId,
-        );
-
-      const obtainedMarks =
-        submission?.score ?? 0;
-
-      return {
-        problemId:
-          assessmentProblem.problemId,
-
-        maximumMarks,
-
-        obtainedMarks:
-          Math.min(
-            obtainedMarks,
-            maximumMarks,
-          ),
-      };
-    },
-  );
-
-  obtainedMarks =
-    resultItems.reduce(
-      (total, item) =>
-        total + item.obtainedMarks,
-      0,
-    );
-
-  const percentage =
-    totalMarks === 0
-      ? 0
-      : (obtainedMarks / totalMarks) * 100;
-
-  const status =
-    percentage >= PASSING_PERCENTAGE
-      ? "PASS"
-      : "FAIL";
-
-  const result =
-    await prisma.$transaction(
-      async (tx) => {
-        const createdResult =
-          await tx.result.create({
-            data: {
-              attemptId,
-
-              totalMarks,
-
-              obtainedMarks,
-
-              percentage,
-
-              status,
-
-              items: {
-                create: resultItems,
-              },
-            },
-
-            include: {
-              items: true,
-            },
-          });
-
-        await tx.attempt.update({
-          where: {
-            id: attemptId,
-          },
-
-          data: {
-            score: obtainedMarks,
-          },
-        });
-
-        return createdResult;
-      },
-    );
-
-  return result;
-};
-
-
-
-const getMyResult = async (
-  candidateId: string,
-  attemptId: string,
-) => {
-  const result =
-    await prisma.result.findUnique({
+    return await prisma.result.findUnique({
       where: {
-        attemptId,
+        id: attempt.result.id,
       },
-
       include: {
         items: {
           include: {
@@ -242,7 +91,12 @@ const getMyResult = async (
         },
 
         attempt: {
-          include: {
+          select: {
+            id: true,
+            status: true,
+            submittedAt: true,
+            candidateId: true,
+
             assessment: {
               select: {
                 id: true,
@@ -250,18 +104,279 @@ const getMyResult = async (
                 duration: true,
               },
             },
-
-            candidate: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
           },
         },
       },
     });
+  }
+
+  // 6. Make sure every submission has been evaluated
+  //
+  // This is especially important for WRITTEN questions,
+  // because they require manual evaluation.
+  const pendingSubmission = attempt.submissions.find(
+    (submission) => !submission.evaluation,
+  );
+
+  if (pendingSubmission) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "All submissions must be evaluated before generating the final result",
+    );
+  }
+
+  // 7. Select latest submission for each problem
+  //
+  // submissions are already ordered:
+  // createdAt DESC, id DESC
+  //
+  // Therefore, the first submission we encounter
+  // for a problem is its latest submission.
+  const latestSubmissions = new Map<
+    string,
+    (typeof attempt.submissions)[number]
+  >();
+
+  for (const submission of attempt.submissions) {
+    if (!latestSubmissions.has(submission.problemId)) {
+      latestSubmissions.set(
+        submission.problemId,
+        submission,
+      );
+    }
+  }
+
+  // 8. Calculate result items
+  let totalMarks = 0;
+  let obtainedMarks = 0;
+
+  const resultItems =
+    attempt.assessment.problems.map(
+      (assessmentProblem) => {
+        // Assessment-specific marks
+        const maximumMarks =
+          assessmentProblem.points;
+
+        totalMarks += maximumMarks;
+
+        // Get latest submission for this problem
+        const submission =
+          latestSubmissions.get(
+            assessmentProblem.problemId,
+          );
+
+        // If candidate did not submit this problem,
+        // score will be 0.
+        const submissionScore =
+          submission?.score ?? 0;
+
+        // Never allow score > maximum marks
+        const problemObtainedMarks =
+          Math.min(
+            Math.max(submissionScore, 0),
+            maximumMarks,
+          );
+
+        obtainedMarks +=
+          problemObtainedMarks;
+
+        return {
+          problemId:
+            assessmentProblem.problemId,
+
+          maximumMarks,
+
+          obtainedMarks:
+            problemObtainedMarks,
+        };
+      },
+    );
+
+  // 9. Calculate percentage
+  const percentage =
+    totalMarks === 0
+      ? 0
+      : Number(
+          (
+            (obtainedMarks / totalMarks) *
+            100
+          ).toFixed(2),
+        );
+
+  // 10. Determine PASS / FAIL
+  const status =
+    percentage >= PASSING_PERCENTAGE
+      ? "PASS"
+      : "FAIL";
+
+  // 11. Create Result + ResultItems + update Attempt
+  //
+  // Everything happens inside one transaction.
+  const result = await prisma.$transaction(
+    async (tx) => {
+      // Double-check inside transaction.
+      //
+      // This protects against two requests trying to
+      // generate the same result at almost the same time.
+      const existingResult =
+        await tx.result.findUnique({
+          where: {
+            attemptId,
+          },
+        });
+
+      if (existingResult) {
+        return await tx.result.findUnique({
+          where: {
+            id: existingResult.id,
+          },
+          include: {
+            items: {
+              include: {
+                problem: {
+                  select: {
+                    id: true,
+                    title: true,
+                    type: true,
+                    difficulty: true,
+                  },
+                },
+              },
+            },
+
+            attempt: {
+              select: {
+                id: true,
+                status: true,
+                submittedAt: true,
+                candidateId: true,
+
+                assessment: {
+                  select: {
+                    id: true,
+                    title: true,
+                    duration: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      // Create final result
+      const createdResult =
+        await tx.result.create({
+          data: {
+            attemptId,
+            totalMarks,
+            obtainedMarks,
+            percentage,
+            status,
+
+            items: {
+              create: resultItems,
+            },
+          },
+
+          include: {
+            items: {
+              include: {
+                problem: {
+                  select: {
+                    id: true,
+                    title: true,
+                    type: true,
+                    difficulty: true,
+                  },
+                },
+              },
+            },
+
+            attempt: {
+              select: {
+                id: true,
+                status: true,
+                submittedAt: true,
+                candidateId: true,
+
+                assessment: {
+                  select: {
+                    id: true,
+                    title: true,
+                    duration: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+      // Update Attempt.score
+      await tx.attempt.update({
+        where: {
+          id: attemptId,
+        },
+        data: {
+          score: obtainedMarks,
+        },
+      });
+
+      return createdResult;
+    },
+  );
+
+  return result;
+};
+
+
+const getMyResult = async (
+  candidateId: string,
+  attemptId: string,
+) => {
+  const result = await prisma.result.findUnique({
+    where: {
+      attemptId,
+    },
+
+    include: {
+      items: {
+        orderBy: {
+          createdAt: "asc",
+        },
+
+        include: {
+          problem: {
+            select: {
+              id: true,
+              title: true,
+              type: true,
+              difficulty: true,
+            },
+          },
+        },
+      },
+
+      attempt: {
+        select: {
+          id: true,
+          candidateId: true,
+          status: true,
+          startedAt: true,
+          submittedAt: true,
+
+          assessment: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              duration: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
   if (!result) {
     throw new AppError(
@@ -270,13 +385,11 @@ const getMyResult = async (
     );
   }
 
-  if (
-    result.attempt.candidateId !==
-    candidateId
-  ) {
+  // Make sure this result belongs to the logged-in candidate
+  if (result.attempt.candidateId !== candidateId) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "You are not allowed to access this result",
+      "You are not allowed to view this result",
     );
   }
 
@@ -288,10 +401,17 @@ const getAssessmentResults = async (
   recruiterId: string,
   assessmentId: string,
 ) => {
+  // 1. Verify assessment ownership
   const assessment =
     await prisma.assessment.findUnique({
       where: {
         id: assessmentId,
+      },
+
+      select: {
+        id: true,
+        title: true,
+        recruiterId: true,
       },
     });
 
@@ -302,26 +422,58 @@ const getAssessmentResults = async (
     );
   }
 
-  if (
-    assessment.recruiterId !==
-    recruiterId
-  ) {
+  if (assessment.recruiterId !== recruiterId) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "You are not allowed to access this assessment",
+      "You are not allowed to view results for this assessment",
     );
   }
 
-  return prisma.result.findMany({
+  // 2. Get all results
+  const results = await prisma.result.findMany({
     where: {
       attempt: {
         assessmentId,
       },
     },
 
+    orderBy: [
+      {
+        obtainedMarks: "desc",
+      },
+      {
+        percentage: "desc",
+      },
+      {
+        createdAt: "asc",
+      },
+    ],
+
     include: {
-      attempt: {
+      items: {
+        orderBy: {
+          createdAt: "asc",
+        },
+
         include: {
+          problem: {
+            select: {
+              id: true,
+              title: true,
+              type: true,
+              difficulty: true,
+            },
+          },
+        },
+      },
+
+      attempt: {
+        select: {
+          id: true,
+          status: true,
+          startedAt: true,
+          submittedAt: true,
+
           candidate: {
             select: {
               id: true,
@@ -332,11 +484,18 @@ const getAssessmentResults = async (
         },
       },
     },
-
-    orderBy: {
-      obtainedMarks: "desc",
-    },
   });
+
+  return {
+    assessment: {
+      id: assessment.id,
+      title: assessment.title,
+    },
+
+    totalResults: results.length,
+
+    results,
+  };
 };
 
 
@@ -344,41 +503,60 @@ const getRecruiterResultById = async (
   recruiterId: string,
   resultId: string,
 ) => {
-  const result =
-    await prisma.result.findUnique({
-      where: {
-        id: resultId,
-      },
+  const result = await prisma.result.findUnique({
+    where: {
+      id: resultId,
+    },
 
-      include: {
-        items: {
-          include: {
-            problem: {
-              select: {
-                id: true,
-                title: true,
-                type: true,
-                difficulty: true,
-              },
+    include: {
+      items: {
+        orderBy: {
+          createdAt: "asc",
+        },
+
+        include: {
+          problem: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              type: true,
+              difficulty: true,
             },
           },
         },
+      },
 
-        attempt: {
-          include: {
-            candidate: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
+      attempt: {
+        select: {
+          id: true,
+          candidateId: true,
+          status: true,
+          startedAt: true,
+          expiresAt: true,
+          submittedAt: true,
+
+          candidate: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
             },
+          },
 
-            assessment: true,
+          assessment: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              duration: true,
+              recruiterId: true,
+            },
           },
         },
       },
-    });
+    },
+  });
 
   if (!result) {
     throw new AppError(
@@ -387,13 +565,14 @@ const getRecruiterResultById = async (
     );
   }
 
+  // Verify recruiter owns this assessment
   if (
     result.attempt.assessment.recruiterId !==
     recruiterId
   ) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "You are not allowed to access this result",
+      "You are not allowed to view this result",
     );
   }
 
@@ -405,10 +584,17 @@ const getAssessmentStatistics = async (
   recruiterId: string,
   assessmentId: string,
 ) => {
+  // 1. Verify assessment ownership
   const assessment =
     await prisma.assessment.findUnique({
       where: {
         id: assessmentId,
+      },
+
+      select: {
+        id: true,
+        title: true,
+        recruiterId: true,
       },
     });
 
@@ -419,32 +605,14 @@ const getAssessmentStatistics = async (
     );
   }
 
-  if (
-    assessment.recruiterId !==
-    recruiterId
-  ) {
+  if (assessment.recruiterId !== recruiterId) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "You are not allowed to access this assessment",
+      "You are not allowed to view statistics for this assessment",
     );
   }
 
-  const results =
-    await prisma.result.findMany({
-      where: {
-        attempt: {
-          assessmentId,
-        },
-      },
-
-      select: {
-        obtainedMarks: true,
-        totalMarks: true,
-        percentage: true,
-        status: true,
-      },
-    });
-
+  // 2. Get all attempts
   const totalCandidates =
     await prisma.attempt.count({
       where: {
@@ -452,81 +620,127 @@ const getAssessmentStatistics = async (
       },
     });
 
+  // 3. Get completed results
+  const results = await prisma.result.findMany({
+    where: {
+      attempt: {
+        assessmentId,
+      },
+    },
+
+    select: {
+      obtainedMarks: true,
+      totalMarks: true,
+      percentage: true,
+      status: true,
+    },
+  });
+
   const completedCandidates =
     results.length;
 
-  const passed =
+  // 4. Passed / failed
+  const passedCandidates =
     results.filter(
-      (result) =>
-        result.status === "PASS",
+      (result) => result.status === "PASS",
     ).length;
 
-  const failed =
+  const failedCandidates =
     results.filter(
-      (result) =>
-        result.status === "FAIL",
+      (result) => result.status === "FAIL",
     ).length;
 
-  const totalScore =
+  // 5. Calculate average score
+  const totalObtainedMarks =
     results.reduce(
       (sum, result) =>
         sum + result.obtainedMarks,
       0,
     );
 
-  const totalPercentage =
+  const totalPercentages =
     results.reduce(
       (sum, result) =>
         sum + result.percentage,
       0,
     );
 
+  const averageScore =
+    completedCandidates === 0
+      ? 0
+      : Number(
+          (
+            totalObtainedMarks /
+            completedCandidates
+          ).toFixed(2),
+        );
+
+  const averagePercentage =
+    completedCandidates === 0
+      ? 0
+      : Number(
+          (
+            totalPercentages /
+            completedCandidates
+          ).toFixed(2),
+        );
+
+  // 6. Highest / lowest score
+  const scores = results.map(
+    (result) => result.obtainedMarks,
+  );
+
   const highestScore =
-    results.length > 0
-      ? Math.max(
-          ...results.map(
-            (result) =>
-              result.obtainedMarks,
-          ),
-        )
+    scores.length > 0
+      ? Math.max(...scores)
       : 0;
 
   const lowestScore =
-    results.length > 0
-      ? Math.min(
-          ...results.map(
-            (result) =>
-              result.obtainedMarks,
-          ),
-        )
+    scores.length > 0
+      ? Math.min(...scores)
       : 0;
 
+  // 7. Pass percentage
+  const passPercentage =
+    completedCandidates === 0
+      ? 0
+      : Number(
+          (
+            (passedCandidates /
+              completedCandidates) *
+            100
+          ).toFixed(2),
+        );
+
   return {
-    assessmentId,
+    assessment: {
+      id: assessment.id,
+      title: assessment.title,
+    },
 
-    totalCandidates,
+    statistics: {
+      totalCandidates,
 
-    completedCandidates,
+      completedCandidates,
 
-    passed,
+      pendingCandidates:
+        totalCandidates -
+        completedCandidates,
 
-    failed,
+      passedCandidates,
 
-    averageScore:
-      completedCandidates > 0
-        ? totalScore /
-          completedCandidates
-        : 0,
+      failedCandidates,
 
-    averagePercentage:
-      completedCandidates > 0
-        ? totalPercentage /
-          completedCandidates
-        : 0,
+      passPercentage,
 
-    highestScore,
+      averageScore,
 
-    lowestScore,
+      averagePercentage,
+
+      highestScore,
+
+      lowestScore,
+    },
   };
 };
 
