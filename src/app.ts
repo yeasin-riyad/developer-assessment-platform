@@ -14,6 +14,8 @@ import { submissionRoutes } from "./app/modules/submission/submission.route.js";
 import { evaluationRoutes } from "./app/modules/evaluation/evaluation.route.js";
 import { resultRoutes } from "./app/modules/result/result.route.js";
 import { adminRoutes } from "./app/modules/admin/admin.route.js";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./app/config/swagger.js";
 
 const app = express();
 
@@ -30,6 +32,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec),
+);
 app.get("/api/v1/health", (_req, res) => {
   res.status(200).json({
     success: true,
@@ -37,6 +44,8 @@ app.get("/api/v1/health", (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);

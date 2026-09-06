@@ -71,7 +71,7 @@ const registerUser = async (payload: {
   password: string;
   role?: UserRole;
 }) => {
-  if (payload.role && payload.role != "CREATOR") {
+  if (payload.role && payload.role != "CREATOR" && payload.role!="CANDIDATE"){
     throw new AppError(
       httpStatus.CONFLICT,
       "Only Candidate or Creator Can Manually register",
