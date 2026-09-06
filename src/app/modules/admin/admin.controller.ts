@@ -213,14 +213,209 @@ const deleteCompany = catchAsync(
   },
 );
 
+
+const getAllProblems = catchAsync(
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    const type =
+      req.query.type as
+        | "CODING"
+        | "MCQ"
+        | "WRITTEN"
+        | undefined;
+
+    const difficulty =
+      req.query.difficulty as
+        | "EASY"
+        | "MEDIUM"
+        | "HARD"
+        | undefined;
+
+    const search =
+      req.query.search as
+        | string
+        | undefined;
+
+    const problems =
+      await adminService.getAllProblems({
+        type,
+        difficulty,
+        search,
+      });
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Problems retrieved successfully",
+      data: problems,
+    });
+  },
+);
+
+
+const getProblemById = catchAsync(
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    const problemId =
+      req.params.problemId as string;
+
+    const problem =
+      await adminService.getProblemById(
+        problemId,
+      );
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Problem retrieved successfully",
+      data: problem,
+    });
+  },
+);
+
+const deleteProblem = catchAsync(
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    const problemId =
+      req.params.problemId as string;
+
+    await adminService.deleteProblem(
+      problemId,
+    );
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Problem deleted successfully",
+    });
+  },
+);
+
+
+const getAllAssessments = catchAsync(
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    const status =
+      req.query.status as
+        | "DRAFT"
+        | "PUBLISHED"
+        | "ACTIVE"
+        | "CLOSED"
+        | undefined;
+
+    const search =
+      req.query.search as
+        | string
+        | undefined;
+
+    const assessments =
+      await adminService.getAllAssessments({
+        status,
+        search,
+      });
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Assessments retrieved successfully",
+      data: assessments,
+    });
+  },
+);
+
+const getAssessmentById = catchAsync(
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    const assessmentId =
+      req.params.assessmentId as string;
+
+    const assessment =
+      await adminService.getAssessmentById(
+        assessmentId,
+      );
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Assessment retrieved successfully",
+      data: assessment,
+    });
+  },
+);
+
+const closeAssessment = catchAsync(
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    const assessmentId =
+      req.params.assessmentId as string;
+
+    const assessment =
+      await adminService.closeAssessment(
+        assessmentId,
+      );
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Assessment closed successfully",
+      data: assessment,
+    });
+  },
+);
+
+
+const getPlatformStatistics = catchAsync(
+  async (
+    _req: Request,
+    res: Response,
+  ) => {
+    const statistics =
+      await adminService.getPlatformStatistics();
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Platform statistics retrieved successfully",
+      data: statistics,
+    });
+  },
+);
+
+
 export const adminController = {
+  // User Management
   getAllUsers,
   getUserById,
   updateUserRole,
   updateUserStatus,
   deleteUser,
+
+  // Company Management
   getAllCompanies,
   getCompanyById,
   updateCompanyStatus,
   deleteCompany,
+
+  // Problem Management
+  getAllProblems,
+  getProblemById,
+  deleteProblem,
+
+  // Assessment Management
+  getAllAssessments,
+  getAssessmentById,
+  closeAssessment,
+  getPlatformStatistics
 };

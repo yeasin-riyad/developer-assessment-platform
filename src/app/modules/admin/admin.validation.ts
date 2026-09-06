@@ -76,3 +76,55 @@ export type UpdateCompanyStatusInput =
 
 export type GetCompaniesQueryInput =
   z.infer<typeof getCompaniesQuerySchema>;
+
+
+  export const getProblemsQuerySchema = z.object({
+  type: z
+    .enum([
+      "CODING",
+      "MCQ",
+      "WRITTEN",
+    ])
+    .optional(),
+
+  difficulty: z
+    .enum([
+      "EASY",
+      "MEDIUM",
+      "HARD",
+    ])
+    .optional(),
+
+  search: z
+    .string()
+    .trim()
+    .min(1)
+    .optional(),
+});
+
+export type GetProblemsQueryInput =
+  z.infer<typeof getProblemsQuerySchema>;
+
+
+  export const getAssessmentsQuerySchema =
+  z.object({
+    status: z
+      .enum([
+        "DRAFT",
+        "PUBLISHED",
+        "ACTIVE",
+        "CLOSED",
+      ])
+      .optional(),
+
+    search: z
+      .string()
+      .trim()
+      .min(1)
+      .optional(),
+  });
+
+export type GetAssessmentsQueryInput =
+  z.infer<
+    typeof getAssessmentsQuerySchema
+  >;
