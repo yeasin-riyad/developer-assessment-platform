@@ -36,6 +36,32 @@ export const getUsersQuerySchema = z.object({
     .optional(),
 });
 
+// ===============================
+// Company Management
+// ===============================
+
+export const updateCompanyStatusSchema = z.object({
+  status: z.enum([
+    "ACTIVE",
+    "SUSPENDED",
+  ]),
+});
+
+export const getCompaniesQuerySchema = z.object({
+  status: z
+    .enum([
+      "ACTIVE",
+      "SUSPENDED",
+    ])
+    .optional(),
+
+  search: z
+    .string()
+    .trim()
+    .min(1)
+    .optional(),
+});
+
 export type UpdateUserRoleInput =
   z.infer<typeof updateUserRoleSchema>;
 
@@ -44,3 +70,9 @@ export type UpdateUserStatusInput =
 
 export type GetUsersQueryInput =
   z.infer<typeof getUsersQuerySchema>;
+
+export type UpdateCompanyStatusInput =
+  z.infer<typeof updateCompanyStatusSchema>;
+
+export type GetCompaniesQueryInput =
+  z.infer<typeof getCompaniesQuerySchema>;

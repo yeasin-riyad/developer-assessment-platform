@@ -117,10 +117,110 @@ const deleteUser = catchAsync(
   },
 );
 
+const getAllCompanies = catchAsync(
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    const status =
+      req.query.status as
+        | "ACTIVE"
+        | "SUSPENDED"
+        | undefined;
+
+    const search =
+      req.query.search as
+        | string
+        | undefined;
+
+    const companies =
+      await adminService.getAllCompanies({
+        status,
+        search,
+      });
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Companies retrieved successfully",
+      data: companies,
+    });
+  },
+);
+
+const getCompanyById = catchAsync(
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    const companyId =
+      req.params.companyId as string;
+
+    const company =
+      await adminService.getCompanyById(
+        companyId,
+      );
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Company retrieved successfully",
+      data: company,
+    });
+  },
+);
+
+const updateCompanyStatus = catchAsync(
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    const companyId =
+      req.params.companyId as string;
+
+    const company =
+      await adminService.updateCompanyStatus(
+        companyId,
+        req.body.status,
+      );
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Company status updated successfully",
+      data: company,
+    });
+  },
+);
+
+const deleteCompany = catchAsync(
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    const companyId =
+      req.params.companyId as string;
+
+    await adminService.deleteCompany(
+      companyId,
+    );
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message:
+        "Company deleted successfully",
+    });
+  },
+);
+
 export const adminController = {
   getAllUsers,
   getUserById,
   updateUserRole,
   updateUserStatus,
   deleteUser,
+  getAllCompanies,
+  getCompanyById,
+  updateCompanyStatus,
+  deleteCompany,
 };
