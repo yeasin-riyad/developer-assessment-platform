@@ -12,6 +12,7 @@ import { invitationRoutes } from "./app/modules/invitation/invitation.route.js";
 import { attemptRoutes } from "./app/modules/attempt/attempt.route.js";
 import { submissionRoutes } from "./app/modules/submission/submission.route.js";
 import { evaluationRoutes } from "./app/modules/evaluation/evaluation.route.js";
+import { resultRoutes } from "./app/modules/result/result.route.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/v1/invitations", invitationRoutes);
 app.use("/api/v1/attempts", attemptRoutes);
 app.use("/api/v1/submissions", submissionRoutes);
 app.use("/api/v1/evaluations", evaluationRoutes);
+app.use("/api/v1/results", resultRoutes);
 
 app.use(notFound);
 app.use(globalErrorHandler);
