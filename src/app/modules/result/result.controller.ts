@@ -45,13 +45,20 @@ const getMyResult = catchAsync(
 const getAssessmentResults = catchAsync(
   async (req: Request, res: Response) => {
     const recruiterId = req.user!.userId;
+
     const assessmentId =
       req.params.assessmentId as string;
+
+    const status = req.query.status as
+      | "PASS"
+      | "FAIL"
+      | undefined;
 
     const results =
       await resultService.getAssessmentResults(
         recruiterId,
         assessmentId,
+        status,
       );
 
     res.status(httpStatus.OK).json({

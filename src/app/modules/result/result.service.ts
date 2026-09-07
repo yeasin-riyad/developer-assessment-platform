@@ -400,6 +400,7 @@ const getMyResult = async (
 const getAssessmentResults = async (
   recruiterId: string,
   assessmentId: string,
+  status?: "PASS" | "FAIL",
 ) => {
   // 1. Verify assessment ownership
   const assessment =
@@ -429,9 +430,11 @@ const getAssessmentResults = async (
     );
   }
 
-  // 2. Get all results
+  // 2. Build result filter
   const results = await prisma.result.findMany({
     where: {
+      status,
+
       attempt: {
         assessmentId,
       },

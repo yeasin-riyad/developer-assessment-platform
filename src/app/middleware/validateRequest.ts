@@ -5,23 +5,32 @@ import httpStatus from "http-status";
 import { catchAsync } from "../utils/catchAsync.js";
 import { AppError } from "../utils/AppError.js";
 
-export const validateRequest = (zodSchema: z.ZodObject) => {
-  return catchAsync((req: Request, res: Response, next: NextFunction) => {
-    const payload = req.body ?? {};
+export const validateRequest = (
+  zodSchema: z.ZodObject,
+  source: "body" | "query" | "params" = "body",
+) => {
+  return catchAsync(
+    (req: Request, res: Response, next: NextFunction) => {
+      const payload = req[source] ?? {};
 
-	// console.log(payload,"Payload..")
+      const result = zodSchema.safeParse(payload);
 
-    const result = zodSchema.safeParse(payload);
+      if (!result.success) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          result.error.issues[0].message,
+        );
+      }
 
-    if (!result.success) {
-      throw new AppError(
-        httpStatus.BAD_REQUEST,
-        result.error.issues[0].message,
-      );
-    }
+      if (source === "body") {
+        req.body = result.data;
+      } else if (source === "query") {
+        Object.assign(req.query, result.data);
+      } else if (source === "params") {
+        Object.assign(req.params, result.data);
+      }
 
-    req.body = result.data;
-
-    next();
-  });
+      next();
+    },
+  );
 };

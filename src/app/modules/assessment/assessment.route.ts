@@ -1,31 +1,37 @@
 import { Router } from "express";
 
 import { auth } from "../../middleware/auth.js";
-
 import { validateRequest } from "../../middleware/validateRequest.js";
 
 import { assessmentController } from "./assessment.controller.js";
-
 import {
+  addProblemSchema,
   createAssessmentSchema,
   updateAssessmentSchema,
-  addProblemSchema,
 } from "./assessment.validation.js";
 
 const router = Router();
 
 /**
  * @swagger
+ * tags:
+ *   name: Assessment
+ *   description: Assessment management APIs
+ */
+
+// =====================================================
+// Create Assessment
+// =====================================================
+
+/**
+ * @swagger
  * /api/v1/assessments:
  *   post:
- *     summary: Create a new assessment
- *     description: Create a new assessment in DRAFT status.
- *     tags:
- *       - Assessment
- *
+ *     summary: Create an assessment
+ *     description: Creates a new draft assessment for the authenticated recruiter. The recruiter must have a company before creating an assessment.
+ *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
- *
  *     requestBody:
  *       required: true
  *       content:
@@ -44,24 +50,43 @@ const router = Router();
  *               description:
  *                 type: string
  *                 maxLength: 1000
- *                 example: Assessment for evaluating backend development skills.
+ *                 example: Assessment for evaluating backend development skills
  *               duration:
  *                 type: integer
  *                 minimum: 1
  *                 example: 60
- *
+ *                 description: Assessment duration in minutes
  *     responses:
  *       201:
  *         description: Assessment created successfully
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AssessmentResponse'
  *       400:
- *         description: Invalid request data
- *
+ *         description: Recruiter must create a company before creating an assessment
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Unauthorized
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
- *         description: Forbidden - only recruiters can create assessments
+ *         description: Only recruiters can create assessments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Recruiter not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post(
   "/",
@@ -70,28 +95,32 @@ router.post(
   assessmentController.createAssessment,
 );
 
+// =====================================================
+// Get My Assessments
+// =====================================================
 
 /**
  * @swagger
  * /api/v1/assessments:
  *   get:
  *     summary: Get my assessments
- *     description: Retrieve all assessments created by the authenticated recruiter.
- *     tags:
- *       - Assessment
- *
+ *     description: Returns all assessments created by the authenticated recruiter, including their problems ordered by question order.
+ *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
- *
  *     responses:
  *       200:
  *         description: Assessments retrieved successfully
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AssessmentListResponse'
  *       401:
  *         description: Unauthorized
- *
- *       403:
- *         description: Forbidden - only recruiters can access their assessments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get(
   "/",
@@ -99,19 +128,19 @@ router.get(
   assessmentController.getMyAssessments,
 );
 
+// =====================================================
+// Get Assessment By ID
+// =====================================================
 
 /**
  * @swagger
  * /api/v1/assessments/{id}:
  *   get:
  *     summary: Get assessment by ID
- *     description: Retrieve a specific assessment created by the authenticated recruiter.
- *     tags:
- *       - Assessment
- *
+ *     description: Returns detailed information about an assessment owned by the authenticated recruiter, including its problems.
+ *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
- *
  *     parameters:
  *       - in: path
  *         name: id
@@ -120,19 +149,25 @@ router.get(
  *           type: string
  *           format: uuid
  *         description: Assessment ID
- *
  *     responses:
  *       200:
  *         description: Assessment retrieved successfully
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AssessmentDetailResponse'
  *       401:
  *         description: Unauthorized
- *
- *       403:
- *         description: Forbidden
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Assessment not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get(
   "/:id",
@@ -140,19 +175,19 @@ router.get(
   assessmentController.getAssessmentById,
 );
 
+// =====================================================
+// Update Assessment
+// =====================================================
 
 /**
  * @swagger
  * /api/v1/assessments/{id}:
  *   patch:
  *     summary: Update an assessment
- *     description: Update the title, description, or duration of an assessment.
- *     tags:
- *       - Assessment
- *
+ *     description: Updates the title, description, or duration of a draft assessment owned by the authenticated recruiter.
+ *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
- *
  *     parameters:
  *       - in: path
  *         name: id
@@ -161,7 +196,6 @@ router.get(
  *           type: string
  *           format: uuid
  *         description: Assessment ID
- *
  *     requestBody:
  *       required: true
  *       content:
@@ -173,31 +207,41 @@ router.get(
  *                 type: string
  *                 minLength: 3
  *                 maxLength: 200
- *                 example: Senior Backend Developer Assessment
+ *                 example: Advanced Backend Developer Assessment
  *               description:
  *                 type: string
  *                 maxLength: 1000
- *                 example: Updated assessment for senior backend developers.
+ *                 example: Updated assessment description
  *               duration:
  *                 type: integer
  *                 minimum: 1
  *                 example: 90
- *
+ *                 description: Assessment duration in minutes
  *     responses:
  *       200:
  *         description: Assessment updated successfully
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AssessmentResponse'
  *       400:
- *         description: Invalid request data
- *
+ *         description: Only draft assessments can be updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Unauthorized
- *
- *       403:
- *         description: Forbidden
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Assessment not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.patch(
   "/:id",
@@ -206,19 +250,19 @@ router.patch(
   assessmentController.updateAssessment,
 );
 
+// =====================================================
+// Add Problem To Assessment
+// =====================================================
 
 /**
  * @swagger
  * /api/v1/assessments/{id}/problems:
  *   post:
  *     summary: Add a problem to an assessment
- *     description: Add an existing problem from the problem bank to an assessment.
- *     tags:
- *       - Assessment
- *
+ *     description: Adds an existing problem to a draft assessment and automatically recalculates the assessment total marks.
+ *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
- *
  *     parameters:
  *       - in: path
  *         name: id
@@ -227,7 +271,6 @@ router.patch(
  *           type: string
  *           format: uuid
  *         description: Assessment ID
- *
  *     requestBody:
  *       required: true
  *       content:
@@ -251,22 +294,38 @@ router.patch(
  *                 type: integer
  *                 minimum: 1
  *                 example: 1
- *
+ *                 description: Question order inside the assessment
  *     responses:
  *       201:
  *         description: Problem added to assessment successfully
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AssessmentProblemResponse'
  *       400:
- *         description: Invalid request data
- *
+ *         description: Problems can only be added to a draft assessment
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Unauthorized
- *
- *       403:
- *         description: Forbidden
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Assessment or problem not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Problem already exists in this assessment
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post(
   "/:id/problems",
@@ -275,19 +334,19 @@ router.post(
   assessmentController.addProblem,
 );
 
+// =====================================================
+// Remove Problem From Assessment
+// =====================================================
 
 /**
  * @swagger
  * /api/v1/assessments/{id}/problems/{problemId}:
  *   delete:
  *     summary: Remove a problem from an assessment
- *     description: Remove an existing problem from an assessment.
- *     tags:
- *       - Assessment
- *
+ *     description: Removes a problem from a draft assessment and automatically recalculates the assessment total marks.
+ *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
- *
  *     parameters:
  *       - in: path
  *         name: id
@@ -296,27 +355,38 @@ router.post(
  *           type: string
  *           format: uuid
  *         description: Assessment ID
- *
  *       - in: path
  *         name: problemId
  *         required: true
  *         schema:
  *           type: string
  *           format: uuid
- *         description: Problem ID
- *
+ *         description: Problem ID to remove
  *     responses:
  *       200:
- *         description: Problem removed from assessment successfully
- *
+ *         description: Problem removed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AssessmentResponse'
+ *       400:
+ *         description: Problems can only be removed from a draft assessment
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Unauthorized
- *
- *       403:
- *         description: Forbidden
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
- *         description: Assessment or problem not found
+ *         description: Assessment or problem not found in the assessment
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.delete(
   "/:id/problems/:problemId",
@@ -324,19 +394,19 @@ router.delete(
   assessmentController.removeProblem,
 );
 
+// =====================================================
+// Publish Assessment
+// =====================================================
 
 /**
  * @swagger
  * /api/v1/assessments/{id}/publish:
  *   patch:
  *     summary: Publish an assessment
- *     description: Publish a draft assessment so it can be used for candidate invitations.
- *     tags:
- *       - Assessment
- *
+ *     description: Publishes a draft assessment. The assessment must contain at least one problem and have total marks greater than zero.
+ *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
- *
  *     parameters:
  *       - in: path
  *         name: id
@@ -345,22 +415,31 @@ router.delete(
  *           type: string
  *           format: uuid
  *         description: Assessment ID
- *
  *     responses:
  *       200:
  *         description: Assessment published successfully
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AssessmentResponse'
  *       400:
  *         description: Assessment cannot be published
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Unauthorized
- *
- *       403:
- *         description: Forbidden
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Assessment not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.patch(
   "/:id/publish",
@@ -368,19 +447,19 @@ router.patch(
   assessmentController.publishAssessment,
 );
 
+// =====================================================
+// Unpublish Assessment
+// =====================================================
 
 /**
  * @swagger
  * /api/v1/assessments/{id}/unpublish:
  *   patch:
  *     summary: Unpublish an assessment
- *     description: Move a published assessment back to DRAFT status.
- *     tags:
- *       - Assessment
- *
+ *     description: Moves a published assessment back to draft status.
+ *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
- *
  *     parameters:
  *       - in: path
  *         name: id
@@ -389,22 +468,31 @@ router.patch(
  *           type: string
  *           format: uuid
  *         description: Assessment ID
- *
  *     responses:
  *       200:
  *         description: Assessment unpublished successfully
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AssessmentResponse'
  *       400:
- *         description: Assessment cannot be unpublished
- *
+ *         description: Only published assessments can be unpublished
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Unauthorized
- *
- *       403:
- *         description: Forbidden
- *
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Assessment not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.patch(
   "/:id/unpublish",
