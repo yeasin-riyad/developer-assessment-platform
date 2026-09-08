@@ -1,4 +1,3 @@
-
 import swaggerJSDoc from "swagger-jsdoc";
 
 const swaggerOptions: swaggerJSDoc.Options = {
@@ -14,8 +13,8 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
     servers: [
       {
-        url: "http://localhost:7000",
-        description: "Local Development Server",
+        url: "https://developer-assessment-platform-drab.vercel.app",
+        description: "Production Server",
       },
     ],
 
@@ -64,13 +63,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
             role: {
               type: "string",
-              enum: [
-                "CANDIDATE",
-                "RECRUITER",
-                "CREATOR",
-                "EVALUATOR",
-                "ADMIN",
-              ],
+              enum: ["CANDIDATE", "RECRUITER", "CREATOR", "EVALUATOR", "ADMIN"],
               example: "CANDIDATE",
             },
           },
@@ -115,8 +108,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
               properties: {
                 accessToken: {
                   type: "string",
-                  example:
-                    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 },
 
                 user: {
@@ -200,8 +192,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
             description: {
               type: "string",
               nullable: true,
-              example:
-                "Assessment for evaluating backend development skills",
+              example: "Assessment for evaluating backend development skills",
             },
 
             duration: {
@@ -217,12 +208,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
             status: {
               type: "string",
-              enum: [
-                "DRAFT",
-                "PUBLISHED",
-                "ACTIVE",
-                "CLOSED",
-              ],
+              enum: ["DRAFT", "PUBLISHED", "ACTIVE", "CLOSED"],
               example: "DRAFT",
             },
 
@@ -288,21 +274,13 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
                 type: {
                   type: "string",
-                  enum: [
-                    "CODING",
-                    "MCQ",
-                    "WRITTEN",
-                  ],
+                  enum: ["CODING", "MCQ", "WRITTEN"],
                   example: "CODING",
                 },
 
                 difficulty: {
                   type: "string",
-                  enum: [
-                    "EASY",
-                    "MEDIUM",
-                    "HARD",
-                  ],
+                  enum: ["EASY", "MEDIUM", "HARD"],
                   example: "EASY",
                 },
               },
@@ -366,21 +344,13 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
                 type: {
                   type: "string",
-                  enum: [
-                    "CODING",
-                    "MCQ",
-                    "WRITTEN",
-                  ],
+                  enum: ["CODING", "MCQ", "WRITTEN"],
                   example: "CODING",
                 },
 
                 difficulty: {
                   type: "string",
-                  enum: [
-                    "EASY",
-                    "MEDIUM",
-                    "HARD",
-                  ],
+                  enum: ["EASY", "MEDIUM", "HARD"],
                   example: "EASY",
                 },
 
@@ -509,8 +479,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
             message: {
               type: "string",
-              example:
-                "Problem added to assessment successfully",
+              example: "Problem added to assessment successfully",
             },
 
             data: {
@@ -538,20 +507,12 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
             type: {
               type: "string",
-              enum: [
-                "CODING",
-                "MCQ",
-                "WRITTEN",
-              ],
+              enum: ["CODING", "MCQ", "WRITTEN"],
             },
 
             difficulty: {
               type: "string",
-              enum: [
-                "EASY",
-                "MEDIUM",
-                "HARD",
-              ],
+              enum: ["EASY", "MEDIUM", "HARD"],
             },
           },
         },
@@ -575,20 +536,12 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
             type: {
               type: "string",
-              enum: [
-                "CODING",
-                "MCQ",
-                "WRITTEN",
-              ],
+              enum: ["CODING", "MCQ", "WRITTEN"],
             },
 
             difficulty: {
               type: "string",
-              enum: [
-                "EASY",
-                "MEDIUM",
-                "HARD",
-              ],
+              enum: ["EASY", "MEDIUM", "HARD"],
             },
           },
         },
@@ -693,12 +646,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
             status: {
               type: "string",
-              enum: [
-                "NOT_STARTED",
-                "IN_PROGRESS",
-                "SUBMITTED",
-                "EXPIRED",
-              ],
+              enum: ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED", "EXPIRED"],
             },
 
             startedAt: {
@@ -754,12 +702,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
             status: {
               type: "string",
-              enum: [
-                "NOT_STARTED",
-                "IN_PROGRESS",
-                "SUBMITTED",
-                "EXPIRED",
-              ],
+              enum: ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED", "EXPIRED"],
             },
 
             submittedAt: {
@@ -814,12 +757,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
             status: {
               type: "string",
-              enum: [
-                "NOT_STARTED",
-                "IN_PROGRESS",
-                "SUBMITTED",
-                "EXPIRED",
-              ],
+              enum: ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED", "EXPIRED"],
             },
 
             startedAt: {
@@ -1058,8 +996,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
             message: {
               type: "string",
-              example:
-                "Assessment results retrieved successfully",
+              example: "Assessment results retrieved successfully",
             },
 
             data: {
@@ -1289,8 +1226,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
 
             message: {
               type: "string",
-              example:
-                "Assessment statistics retrieved successfully",
+              example: "Assessment statistics retrieved successfully",
             },
 
             data: {
@@ -1385,10 +1321,9 @@ const swaggerOptions: swaggerJSDoc.Options = {
   // =====================================================
 
   apis: [
-  "./src/app/modules/**/*.route.ts",
-  "./dist/app/modules/**/*.route.js",
-],
+    "./src/app/modules/**/*.route.ts",
+    "./dist/src/app/modules/**/*.route.js",
+  ],
 };
 
 export const swaggerSpec = swaggerJSDoc(swaggerOptions);
-
