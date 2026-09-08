@@ -22,7 +22,7 @@ const router = Router();
 
 /**
  * @swagger
- * /admin/users:
+ * /api/v1/admin/users:
  *   get:
  *     summary: Get all users
  *     description: Retrieve all users with optional role, active status, and search filters.
@@ -139,7 +139,7 @@ router.get(
 
 /**
  * @swagger
- * /admin/users/{userId}:
+ * /api/v1/admin/users/{userId}:
  *   get:
  *     summary: Get user by ID
  *     description: Retrieve detailed information about a specific user.
@@ -249,7 +249,7 @@ router.get(
 
 /**
  * @swagger
- * /admin/users/{userId}/role:
+ * /api/v1/admin/users/{userId}/role:
  *   patch:
  *     summary: Update user role
  *     description: Change the role of a user. An admin cannot change their own role.
@@ -338,7 +338,7 @@ router.patch(
 
 /**
  * @swagger
- * /admin/users/{userId}/status:
+ * /api/v1/admin/users/{userId}/status:
  *   patch:
  *     summary: Update user account status
  *     description: Activate or deactivate a user account. An admin cannot change their own account status.
@@ -420,7 +420,7 @@ router.patch(
 
 /**
  * @swagger
- * /admin/users/{userId}:
+ * /api/v1/admin/users/{userId}:
  *   delete:
  *     summary: Delete user
  *     description: Permanently delete a user. An admin cannot delete their own account.
@@ -471,7 +471,7 @@ router.delete(
 
 /**
  * @swagger
- * /admin/companies:
+ * /api/v1/admin/companies:
  *   get:
  *     summary: Get all companies
  *     description: Retrieve all companies with optional status and search filters.
@@ -568,7 +568,7 @@ router.get(
 
 /**
  * @swagger
- * /admin/companies/{companyId}:
+ * /api/v1/admin/companies/{companyId}:
  *   get:
  *     summary: Get company by ID
  *     tags: [Admin]
@@ -657,7 +657,7 @@ router.get(
 
 /**
  * @swagger
- * /admin/companies/{companyId}/status:
+ * /api/v1/admin/companies/{companyId}/status:
  *   patch:
  *     summary: Update company status
  *     tags: [Admin]
@@ -758,7 +758,7 @@ router.patch(
 
 /**
  * @swagger
- * /admin/companies/{companyId}:
+ * /api/v1/admin/companies/{companyId}:
  *   delete:
  *     summary: Delete company
  *     tags: [Admin]
@@ -804,7 +804,7 @@ router.delete(
 
 /**
  * @swagger
- * /admin/problems:
+ * /api/v1/admin/problems:
  *   get:
  *     summary: Get all problems
  *     description: Retrieve all problems with optional type, difficulty, and search filters.
@@ -922,7 +922,7 @@ router.get(
 
 /**
  * @swagger
- * /admin/problems/{problemId}:
+ * /api/v1/admin/problems/{problemId}:
  *   get:
  *     summary: Get problem by ID
  *     tags: [Admin]
@@ -1071,7 +1071,7 @@ router.get(
 
 /**
  * @swagger
- * /admin/problems/{problemId}:
+ * /api/v1/admin/problems/{problemId}:
  *   delete:
  *     summary: Delete problem
  *     description: Delete a problem if it has not been used by assessments, submissions, answers, or results.
@@ -1121,7 +1121,7 @@ router.delete(
 
 /**
  * @swagger
- * /admin/assessments:
+ * /api/v1/admin/assessments:
  *   get:
  *     summary: Get all assessments
  *     description: Retrieve all assessments with optional status and search filters.
@@ -1228,7 +1228,7 @@ router.get(
 
 /**
  * @swagger
- * /admin/assessments/{assessmentId}:
+ * /api/v1/admin/assessments/{assessmentId}:
  *   get:
  *     summary: Get assessment by ID
  *     description: Retrieve complete assessment details including problems, invitations, attempts, and results.
@@ -1434,7 +1434,7 @@ router.get(
 
 /**
  * @swagger
- * /admin/assessments/{assessmentId}/close:
+ * /api/v1/admin/assessments/{assessmentId}/close:
  *   patch:
  *     summary: Close assessment
  *     description: Close a published or active assessment. Draft assessments cannot be closed.
@@ -1517,7 +1517,7 @@ router.patch(
 
 /**
  * @swagger
- * /admin/statistics:
+ * /api/v1/admin/statistics:
  *   get:
  *     summary: Get platform statistics
  *     description: Retrieve overall statistics for users, companies, problems, assessments, platform activity, and results.

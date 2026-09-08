@@ -1384,7 +1384,10 @@ const swaggerOptions: swaggerJSDoc.Options = {
   // ROUTE DOCUMENTATION LOCATION
   // =====================================================
 
-  apis: ["./src/app/modules/**/*.route.ts"],
+  apis: [
+  "./src/app/modules/**/*.route.ts",
+  "./dist/app/modules/**/*.route.js",
+],
 };
 
 export const swaggerSpec = swaggerJSDoc(swaggerOptions);

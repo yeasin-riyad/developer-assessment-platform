@@ -1,0 +1,49 @@
+model Subscription {
+  id          String             @id @default(uuid())
+  candidateId String
+  plan        SubscriptionPlan
+  status      SubscriptionStatus @default(PENDING)
+
+  startDate   DateTime? 
+  endDate     DateTime?
+
+  candidate   User  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  payments    SubscriptionPayment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([candidateId])
+  @@index([status])
+  @@index([endDate])
+}
+
+model SubscriptionPayment {
+  id String @id @default(uuid())
+
+  subscriptionId String
+  merchantInvoiceNumber String @unique
+
+  amount          Decimal  @db.Decimal(10, 2)
+  status          SubscriptionPaymentStatus @default(PENDING)
+
+  bkashPaymentId String? @unique
+  bkashTrxId     String?
+
+  payerReference String?
+  gatewayResponse Json?
+
+  paidAt       DateTime?
+  refundedAt   DateTime?
+  refundTrxId  String?
+  refundAmount Decimal?
+  refundReason String?
+
+  subscription Subscription @relation(fields: [subscriptionId],references: [id],onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionId])
+  @@index([status])
+}

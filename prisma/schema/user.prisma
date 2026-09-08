@@ -15,6 +15,7 @@ model User {
   invitations  Invitation[]
   attempts     Attempt[]
   evaluations  Evaluation[]
+ subscriptions Subscription[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

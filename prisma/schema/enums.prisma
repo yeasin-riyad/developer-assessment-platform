@@ -67,3 +67,24 @@ enum AuthProvider {
   GOOGLE
   BOTH
 }
+
+
+enum SubscriptionPlan {
+  BASIC
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+enum SubscriptionPaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
