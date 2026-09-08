@@ -1,20 +1,21 @@
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      UserRole @default(CANDIDATE)
-  company   Company?
-  isActive  Boolean  @default(true)
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  password     String?
+  googleId     String?      @unique
+  authProvider AuthProvider @default(LOCAL)
 
-  problems  Problem[]
-  assessments Assessment[]
-  invitations Invitation[]
-  attempts Attempt[]
-  evaluations Evaluation[]
+  role         UserRole     @default(CANDIDATE)
+  isActive     Boolean      @default(true)
+
+  company      Company?
+  problems     Problem[]
+  assessments  Assessment[]
+  invitations  Invitation[]
+  attempts     Attempt[]
+  evaluations  Evaluation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@map("users")
 }
