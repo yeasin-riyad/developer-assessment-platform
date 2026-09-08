@@ -1,6 +1,10 @@
 import express from "express";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import swaggerUi from "swagger-ui-express"; 
+import { swaggerSpec } from "./app/config/swagger.js";
+
+// Import your routes and handlers...
 import { authRoutes } from "./app/modules/auth/auth.route.js";
 import { notFound } from "./app/middleware/notFound.js";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler.js";
@@ -14,26 +18,43 @@ import { submissionRoutes } from "./app/modules/submission/submission.route.js";
 import { evaluationRoutes } from "./app/modules/evaluation/evaluation.route.js";
 import { resultRoutes } from "./app/modules/result/result.route.js";
 import { adminRoutes } from "./app/modules/admin/admin.route.js";
-import swaggerUi from "swagger-ui-express"; 
-import { swaggerSpec } from "./app/config/swagger.js";
 import { subscriptionRoutes } from "./app/modules/subscription/subscription.route.js";
 
 const app = express();
 
-app.use(helmet());
-
-// app.use(
-//   cors({
-//     origin: config.client_url,
-//     credentials: true,
-//   }),
-// );
+// Helmet Configured to allow Swagger CDN assets
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+        imgSrc: ["'self'", "data:", "https://validator.swagger.io"],
+      },
+    },
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use( "/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true, }), );
+// CDN URL options for Swagger UI
+const SWAGGER_CDN_URL = "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.18.3";
+
+const swaggerOptions = {
+  explorer: true,
+  customCssUrl: `${SWAGGER_CDN_URL}/swagger-ui.min.css`,
+  customJs: [
+    `${SWAGGER_CDN_URL}/swagger-ui-bundle.js`,
+    `${SWAGGER_CDN_URL}/swagger-ui-standalone-preset.js`,
+  ],
+};
+
+// Swagger Route Setup
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOptions));
+
 app.get("/api/v1/health", (_req, res) => {
   res.status(200).json({
     success: true,

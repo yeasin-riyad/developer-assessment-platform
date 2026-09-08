@@ -22,7 +22,6 @@
 
   "include": [
     "src/**/*.ts",
-    "api/**/*.ts",
     "prisma7.config.ts"
   ],
 
@@ -31,4 +30,3 @@
     "dist"
   ]
 }
-
