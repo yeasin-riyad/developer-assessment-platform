@@ -60,12 +60,6 @@ const swaggerOptions: swaggerJSDoc.Options = {
               format: "password",
               example: "Password123!",
             },
-
-            role: {
-              type: "string",
-              enum: ["CANDIDATE", "RECRUITER", "CREATOR", "EVALUATOR", "ADMIN"],
-              example: "CANDIDATE",
-            },
           },
         },
 
