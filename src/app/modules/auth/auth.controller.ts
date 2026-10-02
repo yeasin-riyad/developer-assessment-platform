@@ -24,6 +24,8 @@ const setRefreshTokenCookie = (res: Response, token: string) => {
 const register = catchAsync(async (req: Request, res: Response) => {
   const result = await authService.registerUser(req.body);
 
+
+
   res.status(httpStatus.CREATED).json({
     success: true,
     message: "User registered successfully",
@@ -105,31 +107,36 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
 // GOOGLE CALLBACK
 // ======================================================
 
-const googleCallback = catchAsync(async (req: Request, res: Response) => {
-  const code = req.query.code as string | undefined;
+const googleCallback = catchAsync(
+  async (req: Request, res: Response) => {
+    const code = req.query.code as string | undefined;
 
-  if (!code) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Google authorization code is required",
+    if (!code) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Google authorization code is required",
+      );
+    }
+
+    const result =
+      await authService.loginWithGoogle(code);
+
+    setRefreshTokenCookie(
+      res,
+      result.refreshToken,
     );
-  }
 
-  const result = await authService.loginWithGoogle(code);
+    const clientUrl = config.client_url;
 
-  setRefreshTokenCookie(res, result.refreshToken);
+    const redirectUrl =
+      `${clientUrl}/oauth/success` +
+      `?token=${encodeURIComponent(
+        result.accessToken,
+      )}`;
 
-  // Note: For production SPA clients (React/Next.js), consider redirecting 
-  // to client URL: res.redirect(`${config.client_url}/oauth/success?token=${result.accessToken}`);
-  res.status(httpStatus.OK).json({
-    success: true,
-    message: "Google login successful",
-    data: {
-      accessToken: result.accessToken,
-      user: result.user,
-    },
-  });
-});
+    res.redirect(redirectUrl);
+  },
+);
 
 export const authController = {
   register,

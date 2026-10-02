@@ -1,7 +1,8 @@
 import express from "express";
 import helmet from "helmet";
+import cors from "cors";
 import cookieParser from "cookie-parser";
-import swaggerUi from "swagger-ui-express"; 
+import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./app/config/swagger.js";
 
 // Import your routes and handlers...
@@ -19,6 +20,7 @@ import { evaluationRoutes } from "./app/modules/evaluation/evaluation.route.js";
 import { resultRoutes } from "./app/modules/result/result.route.js";
 import { adminRoutes } from "./app/modules/admin/admin.route.js";
 import { subscriptionRoutes } from "./app/modules/subscription/subscription.route.js";
+import config from "./app/config/index.js";
 
 const app = express();
 
@@ -28,12 +30,16 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://cdnjs.cloudflare.com",
+        ],
         styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
         imgSrc: ["'self'", "data:", "https://validator.swagger.io"],
       },
     },
-  })
+  }),
 );
 
 app.use(express.json());
@@ -41,7 +47,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // CDN URL options for Swagger UI
-const SWAGGER_CDN_URL = "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.18.3";
+const SWAGGER_CDN_URL =
+  "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.18.3";
 
 const swaggerOptions = {
   explorer: true,
@@ -53,8 +60,27 @@ const swaggerOptions = {
 };
 
 // Swagger Route Setup
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOptions));
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, swaggerOptions),
+);
 
+const allowedOrigins = [config.client_url];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  }),
+);
 app.get("/api/v1/health", (_req, res) => {
   res.status(200).json({
     success: true,
