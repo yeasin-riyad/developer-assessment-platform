@@ -65,4 +65,10 @@ router.get(
   userController.getMyProfile,
 );
 
+router.get(
+  "/candidates",
+  auth("RECRUITER"),
+  userController.getAllCandidates,
+);
+
 export const userRoutes = router;

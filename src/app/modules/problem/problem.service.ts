@@ -54,23 +54,108 @@ const createProblem = async (
   return problem;
 };
 
-const getAllProblems = async () => {
-  return prisma.problem.findMany({
-    include: {
-      options: true,
-      testCases: true,
-      createdBy: {
+interface GetAllProblemsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: "MCQ" | "WRITTEN";
+  difficulty?: "EASY" | "MEDIUM" | "HARD";
+}
+
+const getAllProblems = async ({
+  page = 1,
+  limit = 10,
+  search,
+  type,
+  difficulty,
+}: GetAllProblemsParams) => {
+  const safePage = Math.max(1, page);
+  const safeLimit = Math.min(
+    Math.max(1, limit),
+    100,
+  );
+
+  const skip = (safePage - 1) * safeLimit;
+
+  const where = {
+    ...(search
+      ? {
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: "insensitive" as const,
+              },
+            },
+            {
+              description: {
+                contains: search,
+                mode: "insensitive" as const,
+              },
+            },
+          ],
+        }
+      : {}),
+
+    ...(type ? { type } : {}),
+
+    ...(difficulty ? { difficulty } : {}),
+  };
+
+  const [problems, total] =
+    await Promise.all([
+      prisma.problem.findMany({
+        where,
+
         select: {
           id: true,
-          name: true,
-          email: true,
+          title: true,
+          description: true,
+          type: true,
+          difficulty: true,
+          points: true,
+          createdAt: true,
+
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
-      },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        skip,
+        take: safeLimit,
+      }),
+
+      prisma.problem.count({
+        where,
+      }),
+    ]);
+
+  const totalPages = Math.ceil(
+    total / safeLimit,
+  );
+
+  return {
+    problems,
+
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages,
+      hasNextPage:
+        safePage < totalPages,
+      hasPreviousPage:
+        safePage > 1,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  };
 };
 
 const getProblemById = async (problemId: string) => {
@@ -99,6 +184,8 @@ const getProblemById = async (problemId: string) => {
 
   return problem;
 };
+
+
 
 export const problemService = {
   createProblem,

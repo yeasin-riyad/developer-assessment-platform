@@ -20,7 +20,12 @@ import { evaluationRoutes } from "./app/modules/evaluation/evaluation.route.js";
 import { resultRoutes } from "./app/modules/result/result.route.js";
 import { adminRoutes } from "./app/modules/admin/admin.route.js";
 import { subscriptionRoutes } from "./app/modules/subscription/subscription.route.js";
+import { candidateRoutes } from "./app/modules/candidate/candidate.route.js";
+
 import config from "./app/config/index.js";
+import { creatorRoutes } from "./app/modules/creator/creator.route.js";
+import { settingsRoutes } from "./app/modules/settings/settings.route.js";
+import { billingRoutes } from "./app/modules/billing/billing.route.js";
 
 const app = express();
 
@@ -66,21 +71,34 @@ app.use(
   swaggerUi.setup(swaggerSpec, swaggerOptions),
 );
 
-const allowedOrigins = [config.client_url];
+
+
+const allowedOrigins = new Set([
+  config.client_url,
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:7005",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
+  "https://sandbox.sslcommerz.com",
+]);
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
+    origin(origin, callback) {
+      // Allow: no origin, "null" origin, or whitelisted origin
+      if (!origin || origin === "null" || allowedOrigins.has(origin)) {
+        return callback(null, true);
       }
-
-      callback(new Error("Not allowed by CORS"));
+      console.error("Blocked CORS origin:", origin);
+      return callback(new Error(`Not allowed by CORS: ${origin}`));
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+
 app.get("/api/v1/health", (_req, res) => {
   res.status(200).json({
     success: true,
@@ -89,6 +107,8 @@ app.get("/api/v1/health", (_req, res) => {
   });
 });
 
+
+app.use("/api/v1/billing", billingRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/companies", companyRoutes);
@@ -101,6 +121,10 @@ app.use("/api/v1/evaluations", evaluationRoutes);
 app.use("/api/v1/results", resultRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
+app.use("/api/v1/candidates",candidateRoutes);
+app.use("/api/v1/creator", creatorRoutes);
+app.use("/api/v1/settings", settingsRoutes);
+
 
 app.use(notFound);
 app.use(globalErrorHandler);

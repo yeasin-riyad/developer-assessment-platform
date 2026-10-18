@@ -1,5 +1,5 @@
 export const SUBSCRIPTION_CONSTANT = {
-  PREMIUM: {
+  PRO: {
     PRICE: 499,
     DURATION_DAYS: 30,
   },

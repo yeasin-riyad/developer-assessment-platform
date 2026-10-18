@@ -1,7 +1,10 @@
+
 import httpStatus from "http-status";
 
-import { AppError } from "../../utils/AppError.js";
 import { prisma } from "../../lib/prisma.js";
+import { AppError } from "../../utils/AppError.js";
+import { evaluationService } from "../evaluation/evaluation.service.js";
+import { resultService } from "../result/result.service.js";
 
 const getMyAttempt = async (
   candidateId: string,
@@ -24,7 +27,15 @@ const getMyAttempt = async (
         },
       },
 
-      answers: true,
+      answers: {
+        select: {
+          id: true,
+          problemId: true,
+          answer: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
     },
   });
 
@@ -96,6 +107,15 @@ const startAttempt = async (
       startedAt,
       expiresAt,
     },
+
+    select: {
+      id: true,
+      assessmentId: true,
+      candidateId: true,
+      status: true,
+      startedAt: true,
+      expiresAt: true,
+    },
   });
 };
 
@@ -127,6 +147,9 @@ const getAttemptQuestions = async (
                       id: true,
                       text: true,
                     },
+                    orderBy: {
+                      id: "asc",
+                    },
                   },
                 },
               },
@@ -148,20 +171,54 @@ const getAttemptQuestions = async (
     );
   }
 
-  if (
-    attempt.status !== "IN_PROGRESS" &&
-    attempt.status !== "NOT_STARTED"
-  ) {
+  if (attempt.status !== "IN_PROGRESS") {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "This attempt is no longer available",
+      "Attempt has not been started or is no longer available",
+    );
+  }
+
+  /*
+   * Server-side timer protection.
+   *
+   * Even if the frontend timer has not reached zero,
+   * the backend remains the source of truth.
+   */
+  if (
+    attempt.expiresAt &&
+    new Date() >= attempt.expiresAt
+  ) {
+    const expiredAttempt = await prisma.attempt.update({
+      where: {
+        id: attempt.id,
+      },
+
+      data: {
+        status: "EXPIRED",
+      },
+
+      select: {
+        id: true,
+        status: true,
+        startedAt: true,
+        expiresAt: true,
+        submittedAt: true,
+      },
+    });
+
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Assessment time has expired. Attempt status: ${expiredAttempt.status}`,
     );
   }
 
   return {
     attemptId: attempt.id,
+
     status: attempt.status,
+
     startedAt: attempt.startedAt,
+
     expiresAt: attempt.expiresAt,
 
     assessment: {
@@ -204,16 +261,17 @@ const saveAnswer = async (
     );
   }
 
-  // Server-side timer validation
+  /*
+   * Server-side timer validation.
+   */
   if (
     attempt.expiresAt &&
-    new Date() > attempt.expiresAt
+    new Date() >= attempt.expiresAt
   ) {
     await prisma.attempt.update({
       where: {
         id: attempt.id,
       },
-
       data: {
         status: "EXPIRED",
       },
@@ -225,13 +283,31 @@ const saveAnswer = async (
     );
   }
 
-  // Make sure problem belongs to assessment
+  /*
+   * Make sure the problem belongs to
+   * this assessment.
+   */
   const assessmentProblem =
     await prisma.assessmentProblem.findUnique({
       where: {
         assessmentId_problemId: {
           assessmentId: attempt.assessmentId,
           problemId: payload.problemId,
+        },
+      },
+
+      include: {
+        problem: {
+          select: {
+            id: true,
+            type: true,
+
+            options: {
+              select: {
+                id: true,
+              },
+            },
+          },
         },
       },
     });
@@ -243,24 +319,109 @@ const saveAnswer = async (
     );
   }
 
-  return prisma.attemptAnswer.upsert({
-    where: {
-      attemptId_problemId: {
+  /*
+   * Only MCQ is supported.
+   */
+  if (assessmentProblem.problem.type !== "MCQ") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Only MCQ questions are supported",
+    );
+  }
+
+  const answer = payload.answer.trim();
+
+  if (!answer) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Answer cannot be empty",
+    );
+  }
+
+  /*
+   * Answer must be a valid option ID.
+   */
+  const isValidOption =
+    assessmentProblem.problem.options.some(
+      (option) => option.id === answer,
+    );
+
+  if (!isValidOption) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invalid option selected",
+    );
+  }
+
+  /*
+   * Save / update candidate answer.
+   */
+  const attemptAnswer =
+    await prisma.attemptAnswer.upsert({
+      where: {
+        attemptId_problemId: {
+          attemptId,
+          problemId: payload.problemId,
+        },
+      },
+
+      create: {
         attemptId,
         problemId: payload.problemId,
+        answer,
       },
-    },
 
-    create: {
-      attemptId,
-      problemId: payload.problemId,
-      answer: payload.answer,
-    },
+      update: {
+        answer,
+      },
 
-    update: {
-      answer: payload.answer,
-    },
-  });
+      select: {
+        id: true,
+        attemptId: true,
+        problemId: true,
+        answer: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+  /*
+   * Create / update submission.
+   */
+  const submission =
+    await prisma.submission.upsert({
+      where: {
+        attemptId_problemId: {
+          attemptId,
+          problemId: payload.problemId,
+        },
+      },
+
+      create: {
+        attemptId,
+        problemId: payload.problemId,
+        answer,
+        status: "PENDING",
+      },
+
+      update: {
+        answer,
+        status: "PENDING",
+      },
+    });
+
+  /*
+   * Automatically evaluate MCQ.
+   */
+  const evaluation =
+    await evaluationService.evaluateObjectiveSubmission(
+      submission.id,
+    );
+
+  return {
+    attemptAnswer,
+    submission: evaluation,
+  };
 };
 
 const submitAttempt = async (
@@ -290,33 +451,90 @@ const submitAttempt = async (
 
   const now = new Date();
 
-  // Time expired
+  /*
+   * Timer expired.
+   */
   if (
     attempt.expiresAt &&
-    now > attempt.expiresAt
+    now >= attempt.expiresAt
   ) {
-    return prisma.attempt.update({
+    const expiredAttempt =
+      await prisma.attempt.update({
+        where: {
+          id: attemptId,
+        },
+
+        data: {
+          status: "EXPIRED",
+          submittedAt: now,
+        },
+
+        select: {
+          id: true,
+          assessmentId: true,
+          candidateId: true,
+          status: true,
+          startedAt: true,
+          expiresAt: true,
+          submittedAt: true,
+        },
+      });
+
+    /*
+     * Generate result even for expired attempt.
+     *
+     * Unanswered MCQs simply receive 0 marks.
+     */
+    const result =
+      await resultService.generateResult(
+        candidateId,
+        attemptId,
+      );
+
+    return {
+      attempt: expiredAttempt,
+      result,
+    };
+  }
+
+  /*
+   * Normal submission.
+   */
+  const submittedAttempt =
+    await prisma.attempt.update({
       where: {
         id: attemptId,
       },
 
       data: {
-        status: "EXPIRED",
+        status: "SUBMITTED",
         submittedAt: now,
       },
+
+      select: {
+        id: true,
+        assessmentId: true,
+        candidateId: true,
+        status: true,
+        startedAt: true,
+        expiresAt: true,
+        submittedAt: true,
+      },
     });
-  }
 
-  return prisma.attempt.update({
-    where: {
-      id: attemptId,
-    },
+  /*
+   * Automatically generate final result.
+   */
+  const result =
+    await resultService.generateResult(
+      candidateId,
+      attemptId,
+    );
 
-    data: {
-      status: "SUBMITTED",
-      submittedAt: now,
-    },
-  });
+  return {
+    attempt: submittedAttempt,
+    result,
+  };
 };
 
 const getAttemptStatus = async (
@@ -345,37 +563,36 @@ const getAttemptStatus = async (
     );
   }
 
-  // Automatically mark expired attempt
+  /*
+   * Automatically expire an active attempt
+   * when the server-side deadline has passed.
+   */
   if (
     attempt.status === "IN_PROGRESS" &&
     attempt.expiresAt &&
-    new Date() > attempt.expiresAt
+    new Date() >= attempt.expiresAt
   ) {
-    const updatedAttempt =
-      await prisma.attempt.update({
-        where: {
-          id: attempt.id,
-        },
+    return prisma.attempt.update({
+      where: {
+        id: attempt.id,
+      },
 
-        data: {
-          status: "EXPIRED",
-        },
+      data: {
+        status: "EXPIRED",
+      },
 
-        select: {
-          id: true,
-          status: true,
-          startedAt: true,
-          expiresAt: true,
-          submittedAt: true,
-        },
-      });
-
-    return updatedAttempt;
+      select: {
+        id: true,
+        status: true,
+        startedAt: true,
+        expiresAt: true,
+        submittedAt: true,
+      },
+    });
   }
 
   return attempt;
 };
-
 
 export const attemptService = {
   getMyAttempt,
@@ -385,3 +602,4 @@ export const attemptService = {
   saveAnswer,
   submitAttempt,
 };
+

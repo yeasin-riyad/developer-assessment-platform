@@ -30,5 +30,14 @@ export default {
   bkash_app_key: process.env.BKASH_APP_KEY,
   bkash_app_secret: process.env.BKASH_APP_SECRET,
   bkash_callback_url: process.env.BKASH_CALLBACK_URL,
-  client_url:process.env.CLIENT_URL
+  client_url:process.env.CLIENT_URL,
+  backend_url:process.env.BACKEND_URL,
+  isLive:process.env.SSLCOMMERZ_IS_LIVE === "true",
+  store_id:process.env.SSLCOMMERZ_STORE_ID,
+  store_password:process.env.SSLCOMMERZ_STORE_PASSWORD,
+  sslcommerz_default_customer_phone:process.env.SSLCOMMERZ_DEFAULT_CUSTOMER_PHONE
 };
+
+
+
+

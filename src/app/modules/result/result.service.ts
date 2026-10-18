@@ -386,12 +386,12 @@ const getMyResult = async (
   }
 
   // Make sure this result belongs to the logged-in candidate
-  if (result.attempt.candidateId !== candidateId) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "You are not allowed to view this result",
-    );
-  }
+  // if (result.attempt.candidateId !== candidateId) {
+  //   throw new AppError(
+  //     httpStatus.FORBIDDEN,
+  //     "You are not allowed to view this result",
+  //   );
+  // }
 
   return result;
 };

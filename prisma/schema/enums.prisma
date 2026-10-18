@@ -69,16 +69,38 @@ enum AuthProvider {
 }
 
 
+// enum SubscriptionPlan {
+//   BASIC
+//   PREMIUM
+// }
+
+// enum SubscriptionStatus {
+//   ACTIVE
+//   EXPIRED
+//   CANCELLED
+//   PENDING
+// }
+
+// enum SubscriptionPaymentStatus {
+//   PENDING
+//   PAID
+//   FAILED
+//   CANCELLED
+//   REFUNDED
+// }
+
+
 enum SubscriptionPlan {
-  BASIC
-  PREMIUM
+  FREE
+  STARTER
+  PRO
 }
 
 enum SubscriptionStatus {
+  PENDING
   ACTIVE
   EXPIRED
   CANCELLED
-  PENDING
 }
 
 enum SubscriptionPaymentStatus {

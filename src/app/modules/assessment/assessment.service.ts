@@ -3,6 +3,57 @@ import httpStatus from "http-status";
 import { AppError } from "../../utils/AppError.js";
 import { prisma } from "../../lib/prisma.js";
 
+const getMyCandidateAssessments = async (
+  candidateId: string,
+) => {
+  const attempts = await prisma.attempt.findMany({
+    where: {
+      candidateId,
+    },
+
+    include: {
+      assessment: {
+        select: {
+          id: true,
+          title: true,
+          duration: true,
+          totalMarks: true,
+          status: true,
+        },
+      },
+
+      answers: {
+        select: {
+          id: true,
+          problemId: true,
+          answer: true,
+        },
+      },
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return attempts.map((attempt) => ({
+    attemptId: attempt.id,
+
+    assessment: attempt.assessment,
+
+    status: attempt.status,
+    score:attempt.score,
+
+    startedAt: attempt.startedAt,
+
+    expiresAt: attempt.expiresAt,
+
+    submittedAt: attempt.submittedAt,
+
+    answeredQuestions: attempt.answers.length,
+  }));
+};
+
 const createAssessment = async (
   recruiterId: string,
   payload: {
@@ -447,4 +498,5 @@ export const assessmentService = {
   removeProblemFromAssessment,
   publishAssessment,
   unpublishAssessment,
+  getMyCandidateAssessments
 };

@@ -129,62 +129,15 @@ router.get(
 );
 
 // =====================================================
-// Get Assessment By ID
+// Publish Assessment
 // =====================================================
 
 /**
  * @swagger
- * /api/v1/assessments/{id}:
- *   get:
- *     summary: Get assessment by ID
- *     description: Returns detailed information about an assessment owned by the authenticated recruiter, including its problems.
- *     tags: [Assessment]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: Assessment ID
- *     responses:
- *       200:
- *         description: Assessment retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AssessmentDetailResponse'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Assessment not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.get(
-  "/:id",
-  auth("RECRUITER"),
-  assessmentController.getAssessmentById,
-);
-
-// =====================================================
-// Update Assessment
-// =====================================================
-
-/**
- * @swagger
- * /api/v1/assessments/{id}:
+ * /api/v1/assessments/{id}/publish:
  *   patch:
- *     summary: Update an assessment
- *     description: Updates the title, description, or duration of a draft assessment owned by the authenticated recruiter.
+ *     summary: Publish an assessment
+ *     description: Publishes a draft assessment. The assessment must contain at least one problem and have total marks greater than zero.
  *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
@@ -196,36 +149,15 @@ router.get(
  *           type: string
  *           format: uuid
  *         description: Assessment ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *                 minLength: 3
- *                 maxLength: 200
- *                 example: Advanced Backend Developer Assessment
- *               description:
- *                 type: string
- *                 maxLength: 1000
- *                 example: Updated assessment description
- *               duration:
- *                 type: integer
- *                 minimum: 1
- *                 example: 90
- *                 description: Assessment duration in minutes
  *     responses:
  *       200:
- *         description: Assessment updated successfully
+ *         description: Assessment published successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AssessmentResponse'
  *       400:
- *         description: Only draft assessments can be updated
+ *         description: Assessment cannot be published
  *         content:
  *           application/json:
  *             schema:
@@ -244,10 +176,62 @@ router.get(
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.patch(
-  "/:id",
+  "/:id/publish",
   auth("RECRUITER"),
-  validateRequest(updateAssessmentSchema),
-  assessmentController.updateAssessment,
+  assessmentController.publishAssessment,
+);
+
+// =====================================================
+// Unpublish Assessment
+// =====================================================
+
+/**
+ * @swagger
+ * /api/v1/assessments/{id}/unpublish:
+ *   patch:
+ *     summary: Unpublish an assessment
+ *     description: Moves a published assessment back to draft status.
+ *     tags: [Assessment]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Assessment ID
+ *     responses:
+ *       200:
+ *         description: Assessment unpublished successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AssessmentResponse'
+ *       400:
+ *         description: Only published assessments can be unpublished
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Assessment not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.patch(
+  "/:id/unpublish",
+  auth("RECRUITER"),
+  assessmentController.unpublishAssessment,
 );
 
 // =====================================================
@@ -395,15 +379,24 @@ router.delete(
 );
 
 // =====================================================
-// Publish Assessment
+// Get My Candidate Assessments
+// =====================================================
+
+router.get(
+  "/my",
+  auth("CANDIDATE"),
+  assessmentController.getMyCandidateAssessments,
+);
+// =====================================================
+// Get Assessment By ID
 // =====================================================
 
 /**
  * @swagger
- * /api/v1/assessments/{id}/publish:
- *   patch:
- *     summary: Publish an assessment
- *     description: Publishes a draft assessment. The assessment must contain at least one problem and have total marks greater than zero.
+ * /api/v1/assessments/{id}:
+ *   get:
+ *     summary: Get assessment by ID
+ *     description: Returns detailed information about an assessment owned by the authenticated recruiter, including its problems.
  *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
@@ -417,17 +410,11 @@ router.delete(
  *         description: Assessment ID
  *     responses:
  *       200:
- *         description: Assessment published successfully
+ *         description: Assessment retrieved successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/AssessmentResponse'
- *       400:
- *         description: Assessment cannot be published
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/AssessmentDetailResponse'
  *       401:
  *         description: Unauthorized
  *         content:
@@ -441,22 +428,22 @@ router.delete(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.patch(
-  "/:id/publish",
+router.get(
+  "/:id",
   auth("RECRUITER"),
-  assessmentController.publishAssessment,
+  assessmentController.getAssessmentById,
 );
 
 // =====================================================
-// Unpublish Assessment
+// Update Assessment
 // =====================================================
 
 /**
  * @swagger
- * /api/v1/assessments/{id}/unpublish:
+ * /api/v1/assessments/{id}:
  *   patch:
- *     summary: Unpublish an assessment
- *     description: Moves a published assessment back to draft status.
+ *     summary: Update an assessment
+ *     description: Updates the title, description, or duration of a draft assessment owned by the authenticated recruiter.
  *     tags: [Assessment]
  *     security:
  *       - bearerAuth: []
@@ -468,15 +455,36 @@ router.patch(
  *           type: string
  *           format: uuid
  *         description: Assessment ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 200
+ *                 example: Advanced Backend Developer Assessment
+ *               description:
+ *                 type: string
+ *                 maxLength: 1000
+ *                 example: Updated assessment description
+ *               duration:
+ *                 type: integer
+ *                 minimum: 1
+ *                 example: 90
+ *                 description: Assessment duration in minutes
  *     responses:
  *       200:
- *         description: Assessment unpublished successfully
+ *         description: Assessment updated successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AssessmentResponse'
  *       400:
- *         description: Only published assessments can be unpublished
+ *         description: Only draft assessments can be updated
  *         content:
  *           application/json:
  *             schema:
@@ -495,9 +503,10 @@ router.patch(
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.patch(
-  "/:id/unpublish",
+  "/:id",
   auth("RECRUITER"),
-  assessmentController.unpublishAssessment,
+  validateRequest(updateAssessmentSchema),
+  assessmentController.updateAssessment,
 );
 
 export const assessmentRoutes = router;

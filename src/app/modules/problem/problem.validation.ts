@@ -28,3 +28,39 @@ export const createProblemSchema = z.object({
 
   testCases: z.array(testCaseSchema).optional(),
 });
+
+export const getProblemsQuerySchema = z.object({
+  page: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1),
+
+  limit: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(100)
+    .default(10),
+
+  search: z
+    .string()
+    .trim()
+    .optional(),
+
+  type: z
+    .enum(["MCQ", "WRITTEN"])
+    .optional(),
+
+  difficulty: z
+    .enum(["EASY", "MEDIUM", "HARD"])
+    .optional(),
+});
+
+export interface GetAllProblemsParams {
+  page: number;
+  limit: number;
+  search?: string;
+  type?: "MCQ" | "WRITTEN";
+  difficulty?: "EASY" | "MEDIUM" | "HARD";
+}

@@ -12,6 +12,7 @@ const createSubmission = async (
   problemId: string,
   answer: string,
 ) => {
+  // console.log("HI..")
   const attempt =
     await prisma.attempt.findUnique({
       where: {
@@ -121,15 +122,12 @@ const createSubmission = async (
    * Objective questions:
    * evaluate immediately.
    */
-  if (
-    problem.type === "MCQ" ||
-    problem.type === "CODING"
-  ) {
-    return evaluationService
-      .evaluateObjectiveSubmission(
-        submission.id,
-      );
-  }
+  // console.log(problem,"HI")
+ if (problem.type === "MCQ") {
+  return evaluationService.evaluateObjectiveSubmission(
+    submission.id,
+  );
+}
 
   /**
    * Written questions remain

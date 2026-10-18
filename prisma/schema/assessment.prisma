@@ -1,26 +1,20 @@
 model Assessment {
-    id          String  @id @default(uuid())
-    title       String
-    description String?
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  duration    Int
+  totalMarks  Int      @default(0)
+  status      AssessmentStatus @default(DRAFT)
+  recruiterId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-    duration   Int
-    totalMarks Int @default(0)
-
-    status AssessmentStatus @default(DRAFT)
-
-    recruiterId String
-    recruiter User @relation(fields: [recruiterId], references: [id])
-
-    problems AssessmentProblem[]
-    invitations Invitation[]
-    attempts Attempt[]
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    @@index([recruiterId])
-    @@index([status])
+  recruiter  User                @relation(fields: [recruiterId], references: [id])
+  problems   AssessmentProblem[]
+  invitations Invitation[]
+  attempts   Attempt[]
 }
+
 
 model AssessmentProblem {
     id String @id @default(uuid())

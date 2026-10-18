@@ -41,12 +41,11 @@ const evaluateObjectiveSubmission = async (
   }
 
   /**
-   * Only MCQ and CODING support
+   * Only MCQ  support
    * automatic evaluation.
    */
   if (
-    submission.problem.type !== "MCQ" &&
-    submission.problem.type !== "CODING"
+    submission.problem.type !== "MCQ" 
   ) {
     throw new AppError(
       httpStatus.BAD_REQUEST,

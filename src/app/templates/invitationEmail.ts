@@ -84,7 +84,7 @@ export const invitationEmailTemplate = ({
 
           <div style="margin: 30px 0;">
             <a
-              href="${config.frontend_url}/invitations"
+              href="${config.client_url}/invitations"
               style="
                 background: #2563eb;
                 color: #ffffff;

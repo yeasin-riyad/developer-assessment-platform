@@ -21,6 +21,7 @@ model Submission {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([attemptId, problemId])
   @@index([attemptId])
   @@index([problemId])
   @@index([status])

@@ -118,7 +118,7 @@ router.post(
  */
 router.get(
   "/attempts/:attemptId",
-  auth("CANDIDATE"),
+  auth("CANDIDATE","RECRUITER","ADMIN"),
   resultController.getMyResult,
 );
 

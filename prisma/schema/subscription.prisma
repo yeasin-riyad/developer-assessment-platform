@@ -12,37 +12,43 @@ model Subscription {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  refundAmount Decimal? @db.Decimal(10, 2)
 
   @@index([candidateId])
   @@index([status])
   @@index([endDate])
 }
 
+
+
 model SubscriptionPayment {
-  id String @id @default(uuid())
+  id                    String   @id @default(uuid())
+  subscriptionId        String
+  merchantInvoiceNumber String   @unique
 
-  subscriptionId String
-  merchantInvoiceNumber String @unique
+  amount                Decimal  @db.Decimal(10, 2)
+  status                SubscriptionPaymentStatus @default(PENDING)
 
-  amount          Decimal  @db.Decimal(10, 2)
-  status          SubscriptionPaymentStatus @default(PENDING)
+  // Existing fields can remain
+  bkashPaymentId        String?  @unique
+  bkashTrxId            String?
+  payerReference        String?
 
-  bkashPaymentId String? @unique
-  bkashTrxId     String?
+  // SSLCOMMERZ fields
+  sslcommerzSessionKey  String?  @unique
+  sslcommerzValId       String?  @unique
 
-  payerReference String?
-  gatewayResponse Json?
-
-  paidAt       DateTime?
-  refundedAt   DateTime?
-  refundTrxId  String?
-  refundAmount Decimal?
-  refundReason String?
+  gatewayResponse       Json?
+  paidAt                DateTime?
+  refundedAt            DateTime?
+  refundTrxId           String?
+  refundAmount          Decimal? @db.Decimal(10, 2)
+  refundReason          String?
 
   subscription Subscription @relation(fields: [subscriptionId],references: [id],onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   @@index([subscriptionId])
   @@index([status])

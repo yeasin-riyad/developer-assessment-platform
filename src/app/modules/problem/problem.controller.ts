@@ -17,14 +17,33 @@ const createProblem = catchAsync(async (req, res) => {
   });
 });
 
-const getAllProblems = catchAsync(async (_req, res) => {
-  const problems = await problemService.getAllProblems();
+const getAllProblems = catchAsync(async (req, res) => {
+  const {
+    page = "1",
+    limit = "10",
+    search,
+    type,
+    difficulty,
+  } = req.query;
+
+  const result = await problemService.getAllProblems({
+    page: Number(page),
+    limit: Number(limit),
+    search: search as string | undefined,
+    type: type as "MCQ" | "WRITTEN" | undefined,
+    difficulty: difficulty as
+      | "EASY"
+      | "MEDIUM"
+      | "HARD"
+      | undefined,
+  });
 
   res.status(httpStatus.OK).json({
     success: true,
     statusCode: httpStatus.OK,
     message: "Problems retrieved successfully",
-    data: problems,
+    data: result.problems,
+    pagination: result.pagination,
   });
 });
 

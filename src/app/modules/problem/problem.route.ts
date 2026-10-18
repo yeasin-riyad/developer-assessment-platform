@@ -2,7 +2,7 @@ import { Router } from "express";
 
 import { problemController } from "./problem.controller.js";
 
-import { createProblemSchema } from "./problem.validation.js";
+import { createProblemSchema, getProblemsQuerySchema } from "./problem.validation.js";
 
 import { auth } from "../../middleware/auth.js";
 
@@ -153,6 +153,7 @@ router.post(
 router.get(
   "/",
   auth("CREATOR", "RECRUITER", "EVALUATOR", "ADMIN"),
+  validateRequest(getProblemsQuerySchema),
   problemController.getAllProblems,
 );
 

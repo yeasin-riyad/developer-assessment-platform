@@ -88,7 +88,7 @@ const createBkashPayment = async (
 
         callbackURL: `${config.bkash_callback_url}/payment/callback`,
 
-        amount: SUBSCRIPTION_CONSTANT.PREMIUM.PRICE.toString(),
+        amount: SUBSCRIPTION_CONSTANT.PRO.PRICE.toString(),
 
         currency: "BDT",
 
@@ -165,9 +165,9 @@ const createBkashPayment = async (
 
     paymentUrl: bkashCreatePaymentResult.bkashURL,
 
-    amount: SUBSCRIPTION_CONSTANT.PREMIUM.PRICE,
+    amount: SUBSCRIPTION_CONSTANT.PRO.PRICE,
 
-    plan: SubscriptionPlan.PREMIUM,
+    plan: SubscriptionPlan.PRO,
   };
 };
 
@@ -259,7 +259,7 @@ const createPremiumSubscription = async (userId: string, email: string) => {
         data: {
           subscriptionId: existingSubscription.id,
           merchantInvoiceNumber,
-          amount: SUBSCRIPTION_CONSTANT.PREMIUM.PRICE,
+          amount: SUBSCRIPTION_CONSTANT.PRO.PRICE,
           status: SubscriptionPaymentStatus.PENDING,
           payerReference: email,
         },
@@ -290,7 +290,7 @@ const createPremiumSubscription = async (userId: string, email: string) => {
   const subscription = await prisma.subscription.create({
     data: {
       candidateId: userId,
-      plan: SubscriptionPlan.PREMIUM,
+      plan: SubscriptionPlan.PRO,
       status: SubscriptionStatus.PENDING,
     },
   });
@@ -307,7 +307,7 @@ const createPremiumSubscription = async (userId: string, email: string) => {
     data: {
       subscriptionId: subscription.id,
       merchantInvoiceNumber,
-      amount: SUBSCRIPTION_CONSTANT.PREMIUM.PRICE,
+      amount: SUBSCRIPTION_CONSTANT.PRO.PRICE,
       status: SubscriptionPaymentStatus.PENDING,
       payerReference: email,
     },
@@ -517,7 +517,7 @@ const subscriptionPaymentCallback = async (query: Record<string, any>) => {
     const endDate = new Date(now);
 
     endDate.setDate(
-      endDate.getDate() + SUBSCRIPTION_CONSTANT.PREMIUM.DURATION_DAYS,
+      endDate.getDate() + SUBSCRIPTION_CONSTANT.PRO.DURATION_DAYS,
     );
 
     /*

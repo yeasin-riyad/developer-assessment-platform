@@ -125,6 +125,23 @@ const unpublishAssessment = catchAsync(async (req, res) => {
   });
 });
 
+const getMyCandidateAssessments = catchAsync(
+  async (req, res) => {
+    const assessments =
+      await assessmentService.getMyCandidateAssessments(
+        req.user!.userId,
+      );
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      statusCode: httpStatus.OK,
+      message:
+        "Candidate assessments retrieved successfully",
+      data: assessments,
+    });
+  },
+);
+
 export const assessmentController = {
   createAssessment,
   getMyAssessments,
@@ -134,4 +151,5 @@ export const assessmentController = {
   removeProblem,
   publishAssessment,
   unpublishAssessment,
+  getMyCandidateAssessments
 };
